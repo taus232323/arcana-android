@@ -17,6 +17,8 @@ import io.element.android.features.enterprise.api.canConnectToAnyHomeserver
 import io.element.android.features.login.impl.accountprovider.AccountProvider
 import io.element.android.features.login.impl.changeserver.ChangeServerState
 import io.element.android.libraries.architecture.Presenter
+import io.element.android.libraries.core.meta.BuildMeta
+import io.element.android.libraries.core.meta.BuildType
 import io.element.android.libraries.core.uri.ensureProtocol
 import kotlinx.collections.immutable.toImmutableList
 
@@ -24,6 +26,7 @@ import kotlinx.collections.immutable.toImmutableList
 class ChangeAccountProviderPresenter(
     private val changeServerPresenter: Presenter<ChangeServerState>,
     private val enterpriseService: EnterpriseService,
+    private val buildMeta: BuildMeta,
 ) : Presenter<ChangeAccountProviderState> {
     @Composable
     override fun present(): ChangeAccountProviderState {
@@ -31,20 +34,20 @@ class ChangeAccountProviderPresenter(
             enterpriseService.defaultHomeserverList()
                 .filter { it != EnterpriseService.ANY_ACCOUNT_PROVIDER }
                 .map { it.ensureProtocol() }
-                .ifEmpty { listOf(AuthenticationConfig.MATRIX_ORG_URL) }
+                .ifEmpty { listOf(AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL) }
                 .map { url ->
                     AccountProvider(
                         url = url,
                         subtitle = null,
-                        isPublic = url == AuthenticationConfig.MATRIX_ORG_URL,
-                        isMatrixOrg = url == AuthenticationConfig.MATRIX_ORG_URL,
+                        isPublic = url == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL,
+                        isMatrixOrg = url == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL,
                     )
                 }
                 .toImmutableList()
         }
 
         val canSearchForAccountProviders = remember {
-            enterpriseService.canConnectToAnyHomeserver()
+            enterpriseService.canConnectToAnyHomeserver() || buildMeta.buildType != BuildType.RELEASE
         }
 
         val changeServerState = changeServerPresenter.present()

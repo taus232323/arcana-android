@@ -44,6 +44,7 @@ class ConfirmAccountProviderNode(
 
     interface Callback : Plugin {
         fun navigateToLoginPassword()
+        fun navigateToNativeRegistration()
         fun navigateToOidc(oidcDetails: OidcDetails)
         fun navigateToCreateAccount(url: String)
         fun navigateToChangeAccountProvider()
@@ -60,6 +61,7 @@ class ConfirmAccountProviderNode(
             modifier = modifier,
             onOidcDetails = callback::navigateToOidc,
             onNeedLoginPassword = callback::navigateToLoginPassword,
+            onNeedNativeRegistration = callback::navigateToNativeRegistration,
             onCreateAccountContinue = callback::navigateToCreateAccount,
             onChange = callback::navigateToChangeAccountProvider,
             onLearnMoreClick = { openLearnMorePage(context) },

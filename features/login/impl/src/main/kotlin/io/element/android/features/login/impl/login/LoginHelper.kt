@@ -14,10 +14,10 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import dev.zacsweers.metro.Inject
+import io.element.android.appconfig.AuthenticationConfig
 import io.element.android.features.login.impl.error.ChangeServerError
 import io.element.android.features.login.impl.screens.chooseaccountprovider.ChooseAccountProviderPresenter
 import io.element.android.features.login.impl.screens.confirmaccountprovider.ConfirmAccountProviderPresenter
-import io.element.android.features.login.impl.screens.createaccount.AccountCreationNotSupported
 import io.element.android.features.login.impl.screens.onboarding.OnBoardingPresenter
 import io.element.android.features.login.impl.web.WebClientUrlForAuthenticationRetriever
 import io.element.android.libraries.architecture.AsyncData
@@ -63,12 +63,13 @@ class LoginHelper(
         resolvedHomeserverUrl: String?,
         loginHint: String?,
     ) {
+        val fallbackHomeserverUrl = resolvedHomeserverUrl ?: homeserverUrl.defaultResolvedHomeserverUrl()
         suspend {
             authenticationService.setHomeserver(homeserverUrl).recoverCatching {
                 // No .well-known file?
                 // If the homeserver is not reachable, try using resolvedHomeserverUrl.
-                if (resolvedHomeserverUrl != null && resolvedHomeserverUrl != homeserverUrl) {
-                    authenticationService.setHomeserver(resolvedHomeserverUrl).getOrThrow()
+                if (fallbackHomeserverUrl != null && fallbackHomeserverUrl != homeserverUrl) {
+                    authenticationService.setHomeserver(fallbackHomeserverUrl).getOrThrow()
                 } else {
                     throw it
                 }
@@ -80,8 +81,7 @@ class LoginHelper(
                         authenticationService.getOidcUrl(prompt = oidcPrompt, loginHint = loginHint).getOrThrow()
                     )
                 } else if (isAccountCreation) {
-                    val url = webClientUrlForAuthenticationRetriever.retrieve(homeserverUrl)
-                    LoginMode.AccountCreation(url)
+                    LoginMode.NativeRegistration
                 } else if (matrixHomeServerDetails.supportsPasswordLogin) {
                     LoginMode.PasswordLogin
                 } else {
@@ -90,12 +90,7 @@ class LoginHelper(
             }.getOrThrow()
         }.runCatchingUpdatingState(
             state = loginModeState,
-            errorTransform = {
-                when (it) {
-                    is AccountCreationNotSupported -> it
-                    else -> ChangeServerError.from(it)
-                }
-            }
+            errorTransform = ChangeServerError::from
         )
     }
 
@@ -124,5 +119,13 @@ class LoginHelper(
             }
         }
         oidcActionFlow.reset()
+    }
+
+    private fun String.defaultResolvedHomeserverUrl(): String? {
+        return if (this == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL) {
+            AuthenticationConfig.DEFAULT_HOMESERVER_URL
+        } else {
+            null
+        }
     }
 }

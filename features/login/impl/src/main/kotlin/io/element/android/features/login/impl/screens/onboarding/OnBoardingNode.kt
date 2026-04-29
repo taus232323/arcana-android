@@ -40,6 +40,7 @@ class OnBoardingNode(
         fun navigateToQrCode()
         fun navigateToBugReport()
         fun navigateToLoginPassword()
+        fun navigateToNativeRegistration()
         fun navigateToOidc(oidcDetails: OidcDetails)
         fun navigateToCreateAccount(url: String)
         fun navigateToDeveloperSettings()
@@ -73,6 +74,7 @@ class OnBoardingNode(
             onReportProblem = callback::navigateToBugReport,
             onOidcDetails = callback::navigateToOidc,
             onNeedLoginPassword = callback::navigateToLoginPassword,
+            onNeedNativeRegistration = callback::navigateToNativeRegistration,
             onLearnMoreClick = { openLearnMorePage(context) },
             onCreateAccountContinue = callback::navigateToCreateAccount,
             onBackClick = callback::onDone,

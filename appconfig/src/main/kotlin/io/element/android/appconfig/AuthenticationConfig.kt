@@ -9,7 +9,12 @@
 package io.element.android.appconfig
 
 object AuthenticationConfig {
-    const val MATRIX_ORG_URL = "https://matrix.org"
+    const val DEFAULT_ACCOUNT_PROVIDER_URL = "https://celesteai.ru"
+    const val DEFAULT_HOMESERVER_URL = "https://matrix.celesteai.ru"
+
+    // Changing server_name after shipping is a database-breaking Matrix server migration, not a client-only setting change.
+    const val DEFAULT_SERVER_NAME = "celesteai.ru"
+    const val MATRIX_ORG_URL = DEFAULT_ACCOUNT_PROVIDER_URL
 
     /**
      * URL with some docs that explain what's sliding sync and how to add it to your home server.

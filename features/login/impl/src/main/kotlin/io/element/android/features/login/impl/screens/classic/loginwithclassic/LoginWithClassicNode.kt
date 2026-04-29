@@ -35,6 +35,7 @@ class LoginWithClassicNode(
     interface Callback : Plugin {
         fun navigateToOtherOptions()
         fun navigateToLoginPassword()
+        fun navigateToNativeRegistration()
         fun navigateToOidc(oidcDetails: OidcDetails)
         fun navigateToCreateAccount(url: String)
         fun navigateToMissingKeyBackup()
@@ -62,6 +63,7 @@ class LoginWithClassicNode(
             onOtherOptionsClick = callback::navigateToOtherOptions,
             onOidcDetails = callback::navigateToOidc,
             onNeedLoginPassword = callback::navigateToLoginPassword,
+            onNeedNativeRegistration = callback::navigateToNativeRegistration,
             onLearnMoreClick = { openLearnMorePage(context) },
             onCreateAccountContinue = callback::navigateToCreateAccount,
         )

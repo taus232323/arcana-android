@@ -54,6 +54,7 @@ class ClassicFlowNode(
     interface Callback : Plugin {
         fun navigateToOnBoarding(allowBackNavigation: Boolean)
         fun navigateToLoginPassword()
+        fun navigateToNativeRegistration()
         fun navigateToOidc(oidcDetails: OidcDetails)
         fun navigateToCreateAccount(url: String)
     }
@@ -109,6 +110,10 @@ class ClassicFlowNode(
 
                     override fun navigateToLoginPassword() {
                         callback.navigateToLoginPassword()
+                    }
+
+                    override fun navigateToNativeRegistration() {
+                        callback.navigateToNativeRegistration()
                     }
 
                     override fun navigateToOidc(oidcDetails: OidcDetails) {

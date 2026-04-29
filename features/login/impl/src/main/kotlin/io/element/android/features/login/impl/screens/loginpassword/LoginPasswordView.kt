@@ -61,6 +61,7 @@ import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.theme.components.Button
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Scaffold
+import io.element.android.libraries.designsystem.theme.components.TextButton
 import io.element.android.libraries.designsystem.theme.components.TextField
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.testtags.TestTags
@@ -72,6 +73,7 @@ import io.element.android.libraries.ui.strings.CommonStrings
 fun LoginPasswordView(
     state: LoginPasswordState,
     onBackClick: () -> Unit,
+    onForgotPasswordClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val autofillManager = LocalAutofillManager.current
@@ -136,7 +138,8 @@ fun LoginPasswordView(
             LoginForm(
                 state = state,
                 isLoading = isLoading,
-                onSubmit = ::submit
+                onSubmit = ::submit,
+                onForgotPasswordClick = onForgotPasswordClick,
             )
             // Min spacing
             Spacer(Modifier.height(24.dp))
@@ -175,6 +178,7 @@ private fun LoginForm(
     state: LoginPasswordState,
     isLoading: Boolean,
     onSubmit: () -> Unit,
+    onForgotPasswordClick: (String) -> Unit,
 ) {
     var loginFieldState by textFieldState(stateValue = state.formState.login)
     var passwordFieldState by textFieldState(stateValue = state.formState.password)
@@ -269,6 +273,14 @@ private fun LoginForm(
             ),
             singleLine = true,
         )
+        Spacer(Modifier.height(16.dp))
+        TextButton(
+            text = stringResource(CommonStrings.action_forgot_password),
+            onClick = {
+                onForgotPasswordClick(state.formState.login.trim())
+            },
+            enabled = !isLoading,
+        )
     }
 }
 
@@ -294,5 +306,6 @@ internal fun LoginPasswordViewPreview(@PreviewParameter(LoginPasswordStateProvid
     LoginPasswordView(
         state = state,
         onBackClick = {},
+        onForgotPasswordClick = {},
     )
 }

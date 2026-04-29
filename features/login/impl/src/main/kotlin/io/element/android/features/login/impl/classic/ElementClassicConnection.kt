@@ -275,7 +275,7 @@ class DefaultElementClassicConnection(
 
     private suspend fun ensureHomeserverIsSupported(state: ElementClassicConnectionState): ElementClassicConnectionState {
         return if (state is ElementClassicConnectionState.ElementClassicReady) {
-            val elementXCanConnect = setOfNotNull(
+            val clientCanConnect = setOfNotNull(
                 // Try with the domain name first
                 state.elementClassicSession.userId.domainName?.ensureProtocol(),
                 // Then try with the resolved homeserver URL, if provided and distinct
@@ -293,11 +293,11 @@ class DefaultElementClassicConnection(
                 }
                 isCompatible
             }
-            if (elementXCanConnect) {
+            if (clientCanConnect) {
                 state
             } else {
-                Timber.tag(loggerTag.value).w("Cannot import session because the homeserver is not compatible with Element X")
-                ElementClassicConnectionState.Error("The homeserver is not compatible with Element X")
+                Timber.tag(loggerTag.value).w("Cannot import session because the homeserver is not compatible with this client")
+                ElementClassicConnectionState.Error("The homeserver is not compatible with this client")
             }
         } else {
             state

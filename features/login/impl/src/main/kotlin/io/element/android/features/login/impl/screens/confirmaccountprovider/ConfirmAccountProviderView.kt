@@ -40,6 +40,7 @@ fun ConfirmAccountProviderView(
     state: ConfirmAccountProviderState,
     onOidcDetails: (OidcDetails) -> Unit,
     onNeedLoginPassword: () -> Unit,
+    onNeedNativeRegistration: () -> Unit = {},
     onLearnMoreClick: () -> Unit,
     onCreateAccountContinue: (url: String) -> Unit,
     onChange: () -> Unit,
@@ -105,6 +106,7 @@ fun ConfirmAccountProviderView(
             onLearnMoreClick = onLearnMoreClick,
             onOidcDetails = onOidcDetails,
             onNeedLoginPassword = onNeedLoginPassword,
+            onNeedNativeRegistration = onNeedNativeRegistration,
             onCreateAccountContinue = onCreateAccountContinue,
         )
     }
@@ -119,6 +121,7 @@ internal fun ConfirmAccountProviderViewPreview(
         state = state,
         onOidcDetails = {},
         onNeedLoginPassword = {},
+        onNeedNativeRegistration = {},
         onCreateAccountContinue = {},
         onLearnMoreClick = {},
         onChange = {},

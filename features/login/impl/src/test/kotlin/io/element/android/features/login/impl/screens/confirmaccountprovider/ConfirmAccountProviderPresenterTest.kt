@@ -283,7 +283,7 @@ class ConfirmAccountProviderPresenterTest {
     }
 
     @Test
-    fun `present - confirm account creation without oidc and without url generates an error`() = runTest {
+    fun `present - confirm account creation without oidc continues with native registration`() = runTest {
         val authenticationService = FakeMatrixAuthenticationService(
             setHomeserverResult = {
                 Result.success(aMatrixHomeServerDetails())
@@ -300,13 +300,8 @@ class ConfirmAccountProviderPresenterTest {
             val initialState = awaitItem()
             initialState.eventSink(ConfirmAccountProviderEvents.Continue)
             skipItems(1) // Loading
-            // Check an error was returned
             val submittedState = awaitItem()
-            assertThat(submittedState.loginMode.errorOrNull()).isInstanceOf(AccountCreationNotSupported::class.java)
-            // Assert the error is then cleared
-            submittedState.eventSink(ConfirmAccountProviderEvents.ClearError)
-            val clearedState = awaitItem()
-            assertThat(clearedState.loginMode).isEqualTo(AsyncData.Uninitialized)
+            assertThat(submittedState.loginMode.dataOrNull()).isEqualTo(LoginMode.NativeRegistration)
         }
     }
 
@@ -355,7 +350,7 @@ class ConfirmAccountProviderPresenterTest {
     }
 
     @Test
-    fun `present - confirm account creation without oidc and with url continuing with url`() = runTest {
+    fun `present - confirm account creation without oidc and with url continues with native registration`() = runTest {
         val aUrl = "aUrl"
         val authenticationService = FakeMatrixAuthenticationService(
             setHomeserverResult = {
@@ -372,7 +367,7 @@ class ConfirmAccountProviderPresenterTest {
             initialState.eventSink(ConfirmAccountProviderEvents.Continue)
             skipItems(1) // Loading
             val submittedState = awaitItem()
-            assertThat(submittedState.loginMode.dataOrNull()).isEqualTo(LoginMode.AccountCreation(aUrl))
+            assertThat(submittedState.loginMode.dataOrNull()).isEqualTo(LoginMode.NativeRegistration)
         }
     }
 

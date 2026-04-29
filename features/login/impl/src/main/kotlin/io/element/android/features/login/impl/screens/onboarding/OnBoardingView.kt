@@ -70,6 +70,7 @@ fun OnBoardingView(
     onCreateAccount: () -> Unit,
     onOidcDetails: (OidcDetails) -> Unit,
     onNeedLoginPassword: () -> Unit,
+    onNeedNativeRegistration: () -> Unit = {},
     onLearnMoreClick: () -> Unit,
     onCreateAccountContinue: (url: String) -> Unit,
     onReportProblem: () -> Unit,
@@ -84,6 +85,7 @@ fun OnBoardingView(
             onLearnMoreClick = onLearnMoreClick,
             onOidcDetails = onOidcDetails,
             onNeedLoginPassword = onNeedLoginPassword,
+            onNeedNativeRegistration = onNeedNativeRegistration,
             onCreateAccountContinue = onCreateAccountContinue,
         )
     }

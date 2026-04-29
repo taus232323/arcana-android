@@ -12,6 +12,7 @@ import io.element.android.libraries.matrix.api.auth.OidcDetails
 
 sealed interface LoginMode {
     data object PasswordLogin : LoginMode
+    data object NativeRegistration : LoginMode
     data class Oidc(val oidcDetails: OidcDetails) : LoginMode
     data class AccountCreation(val url: String) : LoginMode
 }

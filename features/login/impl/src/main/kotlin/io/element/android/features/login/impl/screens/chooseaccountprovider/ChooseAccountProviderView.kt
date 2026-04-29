@@ -52,6 +52,7 @@ fun ChooseAccountProviderView(
     onBackClick: () -> Unit,
     onOidcDetails: (OidcDetails) -> Unit,
     onNeedLoginPassword: () -> Unit,
+    onNeedNativeRegistration: () -> Unit = {},
     onLearnMoreClick: () -> Unit,
     onCreateAccountContinue: (url: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -94,7 +95,7 @@ fun ChooseAccountProviderView(
                     val alteredItem = if (item.isMatrixOrg) {
                         // Set the subtitle from the resource
                         item.copy(
-                            subtitle = stringResource(id = R.string.screen_change_account_provider_matrix_org_subtitle),
+                            subtitle = stringResource(id = R.string.screen_change_account_provider_default_subtitle),
                         )
                     } else {
                         item
@@ -131,6 +132,7 @@ fun ChooseAccountProviderView(
                 onLearnMoreClick = onLearnMoreClick,
                 onOidcDetails = onOidcDetails,
                 onNeedLoginPassword = onNeedLoginPassword,
+                onNeedNativeRegistration = onNeedNativeRegistration,
                 onCreateAccountContinue = onCreateAccountContinue,
             )
         }
@@ -146,6 +148,7 @@ internal fun ChooseAccountProviderViewPreview(@PreviewParameter(ChooseAccountPro
         onLearnMoreClick = { },
         onOidcDetails = { },
         onNeedLoginPassword = { },
+        onNeedNativeRegistration = { },
         onCreateAccountContinue = { },
     )
 }

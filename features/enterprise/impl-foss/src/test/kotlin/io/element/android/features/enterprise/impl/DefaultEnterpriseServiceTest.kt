@@ -25,9 +25,9 @@ class DefaultEnterpriseServiceTest {
     }
 
     @Test
-    fun `defaultHomeserverList should return empty list`() {
+    fun `defaultHomeserverList should return Celeste account provider`() {
         val defaultEnterpriseService = DefaultEnterpriseService()
-        assertThat(defaultEnterpriseService.defaultHomeserverList()).isEmpty()
+        assertThat(defaultEnterpriseService.defaultHomeserverList()).containsExactly("https://celesteai.ru")
     }
 
     @Test

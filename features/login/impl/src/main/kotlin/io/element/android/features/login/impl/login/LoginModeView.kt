@@ -34,7 +34,8 @@ fun LoginModeView(
     onLearnMoreClick: () -> Unit,
     onOidcDetails: (OidcDetails) -> Unit,
     onNeedLoginPassword: () -> Unit,
-    onCreateAccountContinue: (url: String) -> Unit
+    onCreateAccountContinue: (url: String) -> Unit = {},
+    onNeedNativeRegistration: () -> Unit = {},
 ) {
     val context = LocalContext.current
     when (loginMode) {
@@ -120,6 +121,7 @@ fun LoginModeView(
             when (val loginModeData = loginMode.data) {
                 is LoginMode.Oidc -> onOidcDetails(loginModeData.oidcDetails)
                 LoginMode.PasswordLogin -> onNeedLoginPassword()
+                LoginMode.NativeRegistration -> onNeedNativeRegistration()
                 is LoginMode.AccountCreation -> onCreateAccountContinue(loginModeData.url)
             }
             // Also clear the data, to let the next screen be able to go back

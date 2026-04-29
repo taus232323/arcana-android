@@ -67,8 +67,8 @@ class ChooseAccountProviderPresenter(
                     AccountProvider(
                         url = url,
                         subtitle = null,
-                        isPublic = url == AuthenticationConfig.MATRIX_ORG_URL,
-                        isMatrixOrg = url == AuthenticationConfig.MATRIX_ORG_URL,
+                        isPublic = url == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL,
+                        isMatrixOrg = url == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL,
                     )
                 }
                 .toImmutableList()

@@ -131,7 +131,7 @@ class OnBoardingPresenter(
             defaultAccountProvider = defaultAccountProvider,
             mustChooseAccountProvider = mustChooseAccountProvider,
             canLoginWithQrCode = canLoginWithQrCode,
-            canCreateAccount = defaultAccountProvider == null && canConnectToAnyHomeserver && OnBoardingConfig.CAN_CREATE_ACCOUNT,
+            canCreateAccount = OnBoardingConfig.CAN_CREATE_ACCOUNT && (defaultAccountProvider != null || canConnectToAnyHomeserver),
             canReportBug = canReportBug && showReportBug,
             loginMode = loginMode,
             version = buildMeta.versionName,

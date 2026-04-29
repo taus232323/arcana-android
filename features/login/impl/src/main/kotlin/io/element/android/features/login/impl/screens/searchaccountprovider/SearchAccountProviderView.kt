@@ -186,10 +186,10 @@ fun SearchAccountProviderView(
 
 @Composable
 private fun HomeserverData.toAccountProvider(): AccountProvider {
-    val isMatrixOrg = homeserverUrl == AuthenticationConfig.MATRIX_ORG_URL
+    val isMatrixOrg = homeserverUrl == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL
     return AccountProvider(
         url = homeserverUrl,
-        subtitle = if (isMatrixOrg) stringResource(id = R.string.screen_change_account_provider_matrix_org_subtitle) else null,
+        subtitle = if (isMatrixOrg) stringResource(id = R.string.screen_change_account_provider_default_subtitle) else null,
         // There is no need to know for other servers right now
         isPublic = isMatrixOrg,
         isMatrixOrg = isMatrixOrg,

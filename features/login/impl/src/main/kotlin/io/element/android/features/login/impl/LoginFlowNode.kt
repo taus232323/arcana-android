@@ -39,7 +39,9 @@ import io.element.android.features.login.impl.screens.classic.ClassicFlowNode
 import io.element.android.features.login.impl.screens.confirmaccountprovider.ConfirmAccountProviderNode
 import io.element.android.features.login.impl.screens.createaccount.CreateAccountNode
 import io.element.android.features.login.impl.screens.loginpassword.LoginPasswordNode
+import io.element.android.features.login.impl.screens.nativeregistration.NativeRegistrationNode
 import io.element.android.features.login.impl.screens.onboarding.OnBoardingNode
+import io.element.android.features.login.impl.screens.passwordreset.PasswordResetNode
 import io.element.android.features.login.impl.screens.searchaccountprovider.SearchAccountProviderNode
 import io.element.android.features.preferences.api.PreferencesEntryPoint
 import io.element.android.libraries.androidutils.browser.openUrlInChromeCustomTab
@@ -142,6 +144,14 @@ class LoginFlowNode(
         ) : NavTarget
 
         @Parcelize
+        data object NativeRegistration : NavTarget
+
+        @Parcelize
+        data class PasswordReset(
+            val initialEmail: String = "",
+        ) : NavTarget
+
+        @Parcelize
         data class CreateAccount(val url: String) : NavTarget
     }
 
@@ -159,6 +169,10 @@ class LoginFlowNode(
 
                     override fun navigateToLoginPassword() {
                         backstack.push(NavTarget.LoginPassword())
+                    }
+
+                    override fun navigateToNativeRegistration() {
+                        backstack.push(NavTarget.NativeRegistration)
                     }
 
                     override fun navigateToOidc(oidcDetails: OidcDetails) {
@@ -213,6 +227,10 @@ class LoginFlowNode(
                         backstack.push(NavTarget.LoginPassword())
                     }
 
+                    override fun navigateToNativeRegistration() {
+                        backstack.push(NavTarget.NativeRegistration)
+                    }
+
                     override fun onDone() {
                         if (navTarget.showBackButton) {
                             backstack.pop()
@@ -254,6 +272,10 @@ class LoginFlowNode(
                     override fun navigateToLoginPassword() {
                         backstack.push(NavTarget.LoginPassword())
                     }
+
+                    override fun navigateToNativeRegistration() {
+                        backstack.push(NavTarget.NativeRegistration)
+                    }
                 }
                 createNode<ChooseAccountProviderNode>(buildContext, listOf(callback))
             }
@@ -280,6 +302,10 @@ class LoginFlowNode(
 
                     override fun navigateToLoginPassword() {
                         backstack.push(NavTarget.LoginPassword())
+                    }
+
+                    override fun navigateToNativeRegistration() {
+                        backstack.push(NavTarget.NativeRegistration)
                     }
 
                     override fun navigateToChangeAccountProvider() {
@@ -322,7 +348,26 @@ class LoginFlowNode(
                 val inputs = LoginPasswordNode.Inputs(
                     initialLogin = navTarget.initialLogin,
                 )
-                createNode<LoginPasswordNode>(buildContext, plugins = listOf(inputs))
+                val callback = object : LoginPasswordNode.Callback {
+                    override fun navigateToPasswordReset(initialEmail: String) {
+                        backstack.push(NavTarget.PasswordReset(initialEmail))
+                    }
+                }
+                createNode<LoginPasswordNode>(buildContext, plugins = listOf(inputs, callback))
+            }
+            NavTarget.NativeRegistration -> {
+                createNode<NativeRegistrationNode>(buildContext)
+            }
+            is NavTarget.PasswordReset -> {
+                val inputs = PasswordResetNode.Inputs(
+                    initialEmail = navTarget.initialEmail,
+                )
+                val callback = object : PasswordResetNode.Callback {
+                    override fun onDone() {
+                        backstack.pop()
+                    }
+                }
+                createNode<PasswordResetNode>(buildContext, plugins = listOf(inputs, callback))
             }
             is NavTarget.CreateAccount -> {
                 val inputs = CreateAccountNode.Inputs(

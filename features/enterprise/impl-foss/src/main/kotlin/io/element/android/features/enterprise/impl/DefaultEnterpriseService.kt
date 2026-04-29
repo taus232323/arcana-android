@@ -24,7 +24,7 @@ class DefaultEnterpriseService : EnterpriseService {
 
     override suspend fun isEnterpriseUser(sessionId: SessionId) = false
 
-    override fun defaultHomeserverList(): List<String> = emptyList()
+    override fun defaultHomeserverList(): List<String> = listOf(DEFAULT_ACCOUNT_PROVIDER_URL)
     override suspend fun isAllowedToConnectToHomeserver(homeserverUrl: String) = true
 
     override suspend fun overrideBrandColor(sessionId: SessionId?, brandColor: String?) = Unit
@@ -45,4 +45,8 @@ class DefaultEnterpriseService : EnterpriseService {
     }
 
     override fun getNoisyNotificationChannelId(sessionId: SessionId): String? = null
+
+    private companion object {
+        const val DEFAULT_ACCOUNT_PROVIDER_URL = "https://celesteai.ru"
+    }
 }
