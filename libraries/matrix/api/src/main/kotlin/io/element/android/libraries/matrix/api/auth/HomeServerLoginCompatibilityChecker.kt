@@ -9,7 +9,7 @@
 package io.element.android.libraries.matrix.api.auth
 
 /**
- * Checks the homeserver's compatibility with Element X.
+ * Checks the homeserver's compatibility with Arcana.
  */
 interface HomeServerLoginCompatibilityChecker {
     /**

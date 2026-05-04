@@ -13,17 +13,17 @@ object ApplicationConfig {
      * Application name used in the UI for string. If empty, the value is taken from the resources `R.string.app_name`.
      * Note that this value is not used for the launcher icon.
      */
-    const val APPLICATION_NAME: String = "MESSENGER_NAME"
+    const val APPLICATION_NAME: String = "Arcana"
 
     /**
      * Used in the strings to reference the client.
      * Cannot be empty.
      */
-    const val PRODUCTION_APPLICATION_NAME: String = "MESSENGER_NAME"
+    const val PRODUCTION_APPLICATION_NAME: String = "Arcana"
 
     /**
      * Used in the strings to reference the desktop/web client.
      * Cannot be empty.
      */
-    const val DESKTOP_APPLICATION_NAME: String = "MESSENGER_NAME"
+    const val DESKTOP_APPLICATION_NAME: String = "Arcana Desktop"
 }

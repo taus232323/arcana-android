@@ -147,7 +147,7 @@ internal fun QrCodeErrorViewPreview(@PreviewParameter(QrCodeErrorScreenTypeProvi
     ElementPreview {
         QrCodeErrorView(
             errorScreenType = errorScreenType,
-            appName = "MESSENGER_NAME",
+            appName = "Arcana",
             onRetry = {},
             onCancel = {},
         )

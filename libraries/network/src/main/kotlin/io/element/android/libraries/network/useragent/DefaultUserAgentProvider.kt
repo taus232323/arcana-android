@@ -27,7 +27,7 @@ class DefaultUserAgentProvider(
 
     /**
      * Create an user agent with the application version.
-     * Ex: Element X/1.5.0 (Xiaomi Mi 9T; Android 11; RKQ1.200826.002; Sdk c344b155c)
+     * Ex: Arcana/1.5.0 (Xiaomi Mi 9T; Android 11; RKQ1.200826.002; Sdk c344b155c)
      */
     private fun buildUserAgent(): String {
         val appName = buildMeta.applicationName

@@ -23,8 +23,8 @@ open class QrCodeIntroStateProvider : PreviewParameterProvider<QrCodeIntroState>
 }
 
 fun aQrCodeIntroState(
-    appName: String = "AppName",
-    desktopAppName: String = "MESSENGER_NAME",
+    appName: String = "Arcana",
+    desktopAppName: String = "Arcana Desktop",
     cameraPermissionState: PermissionsState = aPermissionsState(
         showDialog = false,
         permission = Manifest.permission.CAMERA,

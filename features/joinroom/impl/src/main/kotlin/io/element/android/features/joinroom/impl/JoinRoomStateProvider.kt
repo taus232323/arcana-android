@@ -159,9 +159,9 @@ fun aFailureContentState(): ContentState {
 
 fun aLoadedContentState(
     roomId: RoomId = A_ROOM_ID,
-    name: String? = "Element X android",
+    name: String? = "Arcana Android",
     alias: RoomAlias? = RoomAlias("#exa:matrix.org"),
-    topic: String? = "Element X is a secure, private and decentralized messenger.",
+    topic: String? = "Arcana is a secure, private and decentralized messenger.",
     numberOfMembers: Long? = null,
     roomAvatarUrl: String? = null,
     joinAuthorisationStatus: JoinAuthorisationStatus = JoinAuthorisationStatus.Unknown,
@@ -213,7 +213,7 @@ fun aJoinRoomState(
     knockAction = knockAction,
     cancelKnockAction = cancelKnockAction,
     forgetAction = forgetAction,
-    applicationName = "AppName",
+    applicationName = "Arcana",
     knockMessage = knockMessage,
     hideInviteAvatars = hideInviteAvatars,
     canReportRoom = canReportRoom,

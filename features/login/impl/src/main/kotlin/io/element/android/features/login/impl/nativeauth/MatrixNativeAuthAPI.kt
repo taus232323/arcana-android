@@ -7,6 +7,7 @@
 
 package io.element.android.features.login.impl.nativeauth
 
+import io.element.android.appconfig.ApplicationConfig
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.Response
@@ -35,7 +36,7 @@ internal interface MatrixNativeAuthAPI {
     ): Response<EmailRequestTokenResponse>
 }
 
-internal const val INITIAL_DEVICE_DISPLAY_NAME = "MESSENGER_NAME Android"
+internal const val INITIAL_DEVICE_DISPLAY_NAME = ApplicationConfig.APPLICATION_NAME + " Android"
 
 @Serializable
 internal data class RegisterRequest(

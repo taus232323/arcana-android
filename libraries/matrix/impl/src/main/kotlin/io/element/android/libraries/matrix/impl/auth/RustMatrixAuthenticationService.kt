@@ -11,6 +11,7 @@ package io.element.android.libraries.matrix.impl.auth
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
+import io.element.android.appconfig.ApplicationConfig
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.core.extensions.mapFailure
 import io.element.android.libraries.core.extensions.runCatchingExceptions
@@ -147,7 +148,7 @@ class RustMatrixAuthenticationService(
                 client.login(
                     username = username,
                     password = password,
-                    initialDeviceName = "Element X Android",
+                    initialDeviceName = ApplicationConfig.APPLICATION_NAME + " Android",
                     deviceId = null,
                 )
                 // Ensure that the user is not already logged in with the same account
