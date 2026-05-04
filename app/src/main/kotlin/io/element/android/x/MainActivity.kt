@@ -10,8 +10,12 @@ package io.element.android.x
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +25,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -88,15 +94,27 @@ class MainActivity : NodeActivity() {
                 ) {
                     if (migrationState.migrationAction.isSuccess()) {
                         MainNodeHost()
-                    } else {
-                        appBindings.migrationEntryPoint().Render(
-                            state = migrationState,
-                            modifier = Modifier,
-                        )
+                    }
+                    AnimatedVisibility(
+                        visible = !migrationState.migrationAction.isSuccess(),
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        ArcanaSplashScreen()
                     }
                 }
             }
         }
+    }
+
+    @Composable
+    private fun ArcanaSplashScreen() {
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = painterResource(id = R.drawable.arcana_splash),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+        )
     }
 
     @Composable

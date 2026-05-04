@@ -54,7 +54,7 @@ private fun Content(
     NumberedListOrganism(
         modifier = Modifier.padding(top = 50.dp, start = 20.dp, end = 20.dp),
         items = persistentListOf(
-            AnnotatedString(stringResource(R.string.screen_missing_key_backup_step_1)),
+            AnnotatedString(stringResource(R.string.screen_missing_key_backup_step_1_arcana_classic)),
             AnnotatedString(stringResource(R.string.screen_missing_key_backup_step_2_android)),
             AnnotatedString(stringResource(R.string.screen_missing_key_backup_step_3_android)),
             AnnotatedString(stringResource(R.string.screen_missing_key_backup_step_4)),
@@ -68,7 +68,7 @@ private fun ColumnScope.Buttons(
     onOpenClassicClick: () -> Unit,
 ) {
     Button(
-        text = stringResource(id = R.string.screen_missing_key_backup_open_element_classic),
+        text = stringResource(id = R.string.screen_missing_key_backup_open_arcana_classic),
         modifier = Modifier.fillMaxWidth(),
         onClick = onOpenClassicClick,
     )

@@ -10,6 +10,7 @@ package io.element.android.features.rageshake.impl.crash
 
 import android.os.Build
 import android.os.TransactionTooLargeException
+import io.element.android.appconfig.ApplicationConfig
 import io.element.android.libraries.architecture.appyx.lastCapturedNavState
 import io.element.android.libraries.core.data.tryOrNull
 import timber.log.Timber
@@ -39,7 +40,7 @@ class VectorUncaughtExceptionHandler(
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
         Timber.v("Uncaught exception: $throwable")
         val bugDescription = buildString {
-            val appName = "ElementX"
+            val appName = ApplicationConfig.APPLICATION_NAME
             // append(appName + " Build : " + versionCodeProvider.getVersionCode() + "\n")
             append("$appName Version : 1.0") // ${versionProvider.getVersion(longFormat = true)}\n")
             // append("SDK Version : ${Matrix.getSdkVersion()}\n")

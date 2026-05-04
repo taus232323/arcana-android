@@ -61,7 +61,7 @@ class AppDeveloperSettingsPageTest {
                 eventSink = eventsRecorder
             ),
         )
-        rule.clickOn(R.string.screen_advanced_settings_element_call_base_url)
+        rule.clickOn(R.string.screen_advanced_settings_arcana_call_base_url)
         val textInputNode = rule.onAllNodes(isEditable().and(isFocusable())).filterToOne(hasAnyAncestor(isDialog()))
         textInputNode.performTextInput("https://call.element.dev")
         rule.clickOn(CommonStrings.action_ok)

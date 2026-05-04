@@ -93,20 +93,15 @@ fun LoginWithClassicView(
                         .background(ElementTheme.colors.bgCanvasDefault, shape = RoundedCornerShape(15.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val resId = if (state.isElementPro) {
-                        R.drawable.element_pro_logo
-                    } else {
-                        R.drawable.element_foss_logo
-                    }
                     Image(
-                        modifier = Modifier.size(37.5.dp),
-                        painter = painterResource(id = resId),
+                        modifier = Modifier.size(40.dp),
+                        painter = painterResource(id = R.drawable.arcana_logo),
                         contentDescription = null,
                     )
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = stringResource(id = R.string.screen_onboarding_welcome_title),
+                    text = stringResource(id = R.string.screen_onboarding_welcome_title_arcana),
                     color = ElementTheme.colors.textPrimary,
                     style = ElementTheme.typography.fontHeadingMdBold,
                     textAlign = TextAlign.Center,

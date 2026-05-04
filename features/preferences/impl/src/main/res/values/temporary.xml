@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="screen_advanced_settings_arcana_call_base_url">Custom Arcana Call base URL</string>
+    <string name="screen_advanced_settings_arcana_call_base_url_description">Set a custom base URL for Arcana Call.</string>
+    <string name="screen_advanced_settings_arcana_call_base_url_validation_error">Invalid URL, please make sure you include the protocol (http/https) and the correct address.</string>
+</resources>

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -36,8 +37,6 @@ import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.login.impl.R
 import io.element.android.features.login.impl.login.LoginModeView
 import io.element.android.libraries.architecture.AsyncData
-import io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtom
-import io.element.android.libraries.designsystem.atomic.atoms.ElementLogoAtomSize
 import io.element.android.libraries.designsystem.atomic.molecules.ButtonColumnMolecule
 import io.element.android.libraries.designsystem.atomic.pages.FlowStepPage
 import io.element.android.libraries.designsystem.atomic.pages.OnBoardingPage
@@ -58,7 +57,7 @@ import io.element.android.libraries.ui.strings.CommonStrings
 // Refs:
 // FTUE:
 // - https://www.figma.com/file/o9p34zmiuEpZRyvZXJZAYL/FTUE?type=design&node-id=133-5427&t=5SHVppfYzjvkEywR-0
-// ElementX:
+// Arcana:
 // - https://www.figma.com/file/0MMNu7cTOzLOlWb7ctTkv3/Element-X?type=design&node-id=1816-97419
 @Composable
 fun OnBoardingView(
@@ -204,9 +203,12 @@ private fun OnBoardingContent(state: OnBoardingState) {
                 verticalBias = -0.4f
             )
         ) {
-            ElementLogoAtom(
-                size = ElementLogoAtomSize.Large,
-                modifier = Modifier.padding(top = ElementLogoAtomSize.Large.shadowRadius / 2)
+            Image(
+                painter = painterResource(id = R.drawable.arcana_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .size(158.dp),
             )
         }
         Box(
@@ -222,7 +224,7 @@ private fun OnBoardingContent(state: OnBoardingState) {
                 horizontalAlignment = CenterHorizontally,
             ) {
                 Text(
-                    text = stringResource(id = R.string.screen_onboarding_welcome_title),
+                    text = stringResource(id = R.string.screen_onboarding_welcome_title_arcana),
                     color = ElementTheme.colors.textPrimary,
                     style = ElementTheme.typography.fontHeadingLgBold,
                     textAlign = TextAlign.Center
@@ -298,7 +300,7 @@ private fun OnBoardingButtons(
             )
         } else {
             Button(
-                text = stringResource(id = R.string.screen_onboarding_sign_in_to, defaultAccountProvider),
+                text = stringResource(id = CommonStrings.action_continue),
                 showProgress = isLoading,
                 onClick = {
                     state.eventSink(OnBoardingEvents.OnSignIn(defaultAccountProvider))

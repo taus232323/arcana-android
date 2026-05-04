@@ -113,21 +113,21 @@ fun AppDeveloperSettingsView(
 private fun ElementCallCategory(
     state: AppDeveloperSettingsState,
 ) {
-    PreferenceCategory(title = "Element Call") {
+    PreferenceCategory(title = "Arcana Call") {
         val callUrlState = state.customElementCallBaseUrlState
 
         val supportingText = if (callUrlState.baseUrl.isNullOrEmpty()) {
-            stringResource(R.string.screen_advanced_settings_element_call_base_url_description)
+            stringResource(R.string.screen_advanced_settings_arcana_call_base_url_description)
         } else {
             callUrlState.baseUrl
         }
         PreferenceTextField(
-            headline = stringResource(R.string.screen_advanced_settings_element_call_base_url),
+            headline = stringResource(R.string.screen_advanced_settings_arcana_call_base_url),
             value = callUrlState.baseUrl,
             placeholder = "https://.../room",
             supportingText = supportingText,
             validation = callUrlState.validator,
-            onValidationErrorMessage = stringResource(R.string.screen_advanced_settings_element_call_base_url_validation_error),
+            onValidationErrorMessage = stringResource(R.string.screen_advanced_settings_arcana_call_base_url_validation_error),
             displayValue = { value -> !value.isNullOrEmpty() },
             keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = false, keyboardType = KeyboardType.Uri),
             onChange = { state.eventSink(AppDeveloperSettingsEvent.SetCustomElementCallBaseUrl(it)) }
