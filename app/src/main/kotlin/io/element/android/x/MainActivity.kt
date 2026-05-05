@@ -19,15 +19,19 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -109,12 +113,25 @@ class MainActivity : NodeActivity() {
 
     @Composable
     private fun ArcanaSplashScreen() {
-        Image(
+        Box(
             modifier = Modifier.fillMaxSize(),
-            painter = painterResource(id = R.drawable.arcana_splash),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-        )
+        ) {
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                painter = painterResource(id = R.drawable.arcana_splash_background),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+            )
+            Image(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(0.68f)
+                    .padding(horizontal = 48.dp),
+                painter = painterResource(id = R.drawable.arcana_splash_foreground),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+            )
+        }
     }
 
     @Composable
