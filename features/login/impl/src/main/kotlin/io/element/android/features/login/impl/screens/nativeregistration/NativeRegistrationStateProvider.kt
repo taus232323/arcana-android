@@ -11,7 +11,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import io.element.android.features.login.impl.accountprovider.AccountProvider
 import io.element.android.features.login.impl.accountprovider.anAccountProvider
 import io.element.android.features.login.impl.nativeauth.PendingRegistration
-import io.element.android.features.login.impl.nativeauth.UiaaFlow
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.matrix.api.core.SessionId
 
@@ -19,17 +18,9 @@ open class NativeRegistrationStateProvider : PreviewParameterProvider<NativeRegi
     override val values: Sequence<NativeRegistrationState>
         get() = sequenceOf(
             aNativeRegistrationState(),
+            aNativeRegistrationState(step = NativeRegistrationStep.Code, pendingRegistration = aPendingRegistration(), formState = aNativeRegistrationFormState(email = "alice@example.com", verificationCode = "123456")),
+            aNativeRegistrationState(step = NativeRegistrationStep.Credentials, pendingRegistration = aPendingRegistration(), formState = aNativeRegistrationFormState(email = "alice@example.com", username = "alice", password = "password123")),
             aNativeRegistrationState(registerAction = AsyncData.Loading()),
-            aNativeRegistrationState(
-                pendingRegistration = aPendingRegistration(),
-                formState = aNativeRegistrationFormState(
-                    username = "alice",
-                    email = "alice@example.com",
-                    registrationToken = "celeste-token",
-                    password = "password123",
-                    confirmPassword = "password123",
-                ),
-            ),
             aNativeRegistrationState(registerAction = AsyncData.Failure(Exception("An error occurred"))),
         )
 }
@@ -37,41 +28,35 @@ open class NativeRegistrationStateProvider : PreviewParameterProvider<NativeRegi
 fun aNativeRegistrationState(
     accountProvider: AccountProvider = anAccountProvider(),
     formState: NativeRegistrationFormState = NativeRegistrationFormState.Default,
+    step: NativeRegistrationStep = NativeRegistrationStep.Email,
     registerAction: AsyncData<SessionId> = AsyncData.Uninitialized,
     pendingRegistration: PendingRegistration? = null,
     eventSink: (NativeRegistrationEvents) -> Unit = {},
 ) = NativeRegistrationState(
     accountProvider = accountProvider,
     formState = formState,
+    step = step,
     registerAction = registerAction,
     pendingRegistration = pendingRegistration,
     eventSink = eventSink,
 )
 
 fun aNativeRegistrationFormState(
-    username: String = "",
     email: String = "",
-    registrationToken: String = "",
+    verificationCode: String = "",
+    username: String = "",
     password: String = "",
-    confirmPassword: String = "",
 ) = NativeRegistrationFormState(
-    username = username,
     email = email,
-    registrationToken = registrationToken,
+    verificationCode = verificationCode,
+    username = username,
     password = password,
-    confirmPassword = confirmPassword,
 )
 
 fun aPendingRegistration() = PendingRegistration(
     homeserverUrl = "https://matrix.celesteai.ru",
-    username = "alice",
-    password = "password123",
     email = "alice@example.com",
-    registrationToken = "celeste-token",
     clientSecret = "secret",
     sendAttempt = 1,
     sid = "sid",
-    session = "session",
-    completedStages = listOf("m.login.registration_token"),
-    flows = listOf(UiaaFlow(stages = listOf("m.login.registration_token", "m.login.email.identity", "m.login.dummy"))),
 )

@@ -277,7 +277,7 @@ private fun OnBoardingButtons(
         val signInButtonStringRes = if (state.canLoginWithQrCode || state.canCreateAccount) {
             R.string.screen_onboarding_sign_in_manually
         } else {
-            CommonStrings.action_continue
+            R.string.action_sign_in
         }
         if (state.canLoginWithQrCode) {
             Button(
@@ -300,7 +300,7 @@ private fun OnBoardingButtons(
             )
         } else {
             Button(
-                text = stringResource(id = CommonStrings.action_continue),
+                text = stringResource(id = R.string.action_sign_in),
                 showProgress = isLoading,
                 onClick = {
                     state.eventSink(OnBoardingEvents.OnSignIn(defaultAccountProvider))

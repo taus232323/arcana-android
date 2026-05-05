@@ -32,7 +32,7 @@ class MissingKeyBackupNode(
     private val presenter: MissingKeyBackupPresenter,
 ) : Node(buildContext, plugins = plugins) {
     interface Callback : Plugin {
-        fun navigateBack()
+        fun navigateToOtherOptions()
     }
 
     private val callback: Callback = callback()
@@ -60,7 +60,7 @@ class MissingKeyBackupNode(
         val context = LocalContext.current
         MissingKeyBackupView(
             state = state,
-            onBackClick = callback::navigateBack,
+            onBackClick = callback::navigateToOtherOptions,
             onOpenClassicClick = {
                 openClassic(context)
             },

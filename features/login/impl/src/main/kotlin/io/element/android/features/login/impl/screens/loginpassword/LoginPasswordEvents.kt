@@ -11,6 +11,9 @@ package io.element.android.features.login.impl.screens.loginpassword
 sealed interface LoginPasswordEvents {
     data class SetLogin(val login: String) : LoginPasswordEvents
     data class SetPassword(val password: String) : LoginPasswordEvents
+    data class SetVerificationCode(val verificationCode: String) : LoginPasswordEvents
     data object Submit : LoginPasswordEvents
+    data object ResendVerificationCode : LoginPasswordEvents
+    data object GoBack : LoginPasswordEvents
     data object ClearError : LoginPasswordEvents
 }

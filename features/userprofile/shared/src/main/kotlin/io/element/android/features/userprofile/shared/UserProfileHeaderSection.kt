@@ -57,6 +57,8 @@ fun UserProfileHeaderSection(
     withdrawVerificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val displayUserId = userId.extractedDisplayName
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -93,7 +95,7 @@ fun UserProfileHeaderSection(
         }
         Text(
             modifier = Modifier.niceClickable { onUserIdClick() },
-            text = userId.value,
+            text = displayUserId,
             style = ElementTheme.typography.fontBodyLgRegular,
             color = ElementTheme.colors.textSecondary,
             textAlign = TextAlign.Center,
@@ -115,7 +117,7 @@ fun UserProfileHeaderSection(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = stringResource(CommonStrings.crypto_identity_change_profile_pin_violation, userName ?: userId.value),
+                    text = stringResource(CommonStrings.crypto_identity_change_profile_pin_violation, userName ?: displayUserId),
                     color = ElementTheme.colors.textCriticalPrimary,
                     style = ElementTheme.typography.fontBodyMdMedium,
                 )

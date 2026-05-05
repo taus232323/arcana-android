@@ -8,6 +8,7 @@
 package io.element.android.features.login.impl.screens.nativeregistration
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import dev.zacsweers.metro.Inject
 import io.element.android.features.login.impl.accountprovider.AccountProviderDataSource
+import io.element.android.features.login.impl.nativeauth.NativeAuthException
 import io.element.android.features.login.impl.nativeauth.MatrixNativeAuthService
 import io.element.android.features.login.impl.nativeauth.PendingRegistration
 import io.element.android.features.login.impl.nativeauth.RegistrationResult
@@ -25,6 +27,7 @@ import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
 import io.element.android.libraries.matrix.api.core.SessionId
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Inject
@@ -39,49 +42,112 @@ class NativeRegistrationPresenter(
         val registerAction: MutableState<AsyncData<SessionId>> = remember {
             mutableStateOf(AsyncData.Uninitialized)
         }
-        val pendingRegistration = remember { mutableStateOf<PendingRegistration?>(null) }
+        val step = rememberSaveable { mutableStateOf(NativeRegistrationStep.Email) }
+        val pendingRegistration = rememberSaveable {
+            mutableStateOf<PendingRegistration?>(null)
+        }
         val formState = rememberSaveable {
             mutableStateOf(NativeRegistrationFormState.Default)
+        }
+        val resendBlockedUntilMs = rememberSaveable {
+            mutableStateOf<Long?>(null)
+        }
+
+        LaunchedEffect(resendBlockedUntilMs.value) {
+            val blockedUntilMs = resendBlockedUntilMs.value ?: return@LaunchedEffect
+            val delayMs = blockedUntilMs - System.currentTimeMillis()
+            if (delayMs > 0) {
+                delay(delayMs)
+            }
+            if (resendBlockedUntilMs.value == blockedUntilMs) {
+                resendBlockedUntilMs.value = null
+            }
         }
         val accountProvider by accountProviderDataSource.flow.collectAsState()
 
         fun handleEvent(event: NativeRegistrationEvents) {
             when (event) {
                 NativeRegistrationEvents.ClearError -> registerAction.value = AsyncData.Uninitialized
-                NativeRegistrationEvents.ConfirmEmailVerified -> {
-                    localCoroutineScope.continueRegistration(
-                        pendingRegistration = pendingRegistration,
-                        registerAction = registerAction,
-                    )
+                NativeRegistrationEvents.GoBack -> {
+                    when (step.value) {
+                        NativeRegistrationStep.Email -> Unit
+                        NativeRegistrationStep.Code -> {
+                            step.value = NativeRegistrationStep.Email
+                            updateFormState(formState) {
+                                copy(verificationCode = "")
+                            }
+                        }
+                        NativeRegistrationStep.Credentials -> {
+                            step.value = NativeRegistrationStep.Code
+                        }
+                    }
                 }
                 NativeRegistrationEvents.ResendEmail -> {
                     localCoroutineScope.resendEmail(
                         pendingRegistration = pendingRegistration,
                         registerAction = registerAction,
+                        resendBlockedUntilMs = resendBlockedUntilMs,
                     )
                 }
-                is NativeRegistrationEvents.SetConfirmPassword -> updateFormState(formState) {
-                    copy(confirmPassword = event.confirmPassword)
+                is NativeRegistrationEvents.SetEmail -> {
+                    val sanitized = event.email.trim()
+                    val previousEmail = formState.value.email.trim()
+                    updateFormState(formState) {
+                        copy(email = sanitized)
+                    }
+                    if (pendingRegistration.value != null && sanitized != previousEmail) {
+                        step.value = NativeRegistrationStep.Email
+                        pendingRegistration.value = null
+                        updateFormState(formState) {
+                            copy(verificationCode = "")
+                        }
+                    }
                 }
-                is NativeRegistrationEvents.SetEmail -> updateFormState(formState) {
-                    copy(email = event.email)
+                is NativeRegistrationEvents.SetVerificationCode -> updateFormState(formState) {
+                    copy(verificationCode = event.verificationCode)
                 }
                 is NativeRegistrationEvents.SetPassword -> updateFormState(formState) {
                     copy(password = event.password)
-                }
-                is NativeRegistrationEvents.SetRegistrationToken -> updateFormState(formState) {
-                    copy(registrationToken = event.registrationToken)
                 }
                 is NativeRegistrationEvents.SetUsername -> updateFormState(formState) {
                     copy(username = event.username)
                 }
                 NativeRegistrationEvents.Submit -> {
-                    localCoroutineScope.startRegistration(
-                        homeserverUrl = accountProvider.url,
-                        formState = formState.value,
-                        pendingRegistration = pendingRegistration,
-                        registerAction = registerAction,
-                    )
+                    when (step.value) {
+                        NativeRegistrationStep.Email -> {
+                            val currentEmail = formState.value.email.trim()
+                            val currentPendingRegistration = pendingRegistration.value
+                            if (currentPendingRegistration != null && currentPendingRegistration.email == currentEmail) {
+                                step.value = NativeRegistrationStep.Code
+                                updateFormState(formState) {
+                                    copy(verificationCode = "")
+                                }
+                            } else {
+                                localCoroutineScope.startRegistrationEmail(
+                                    homeserverUrl = accountProvider.url,
+                                    formState = formState,
+                                    pendingRegistration = pendingRegistration,
+                                    registerAction = registerAction,
+                                    step = step,
+                                )
+                            }
+                        }
+                        NativeRegistrationStep.Code -> {
+                            localCoroutineScope.submitRegistrationEmailCode(
+                                formState = formState,
+                                pendingRegistration = pendingRegistration,
+                                registerAction = registerAction,
+                                step = step,
+                            )
+                        }
+                        NativeRegistrationStep.Credentials -> {
+                            localCoroutineScope.finishRegistration(
+                                formState = formState,
+                                pendingRegistration = pendingRegistration,
+                                registerAction = registerAction,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -89,88 +155,123 @@ class NativeRegistrationPresenter(
         return NativeRegistrationState(
             accountProvider = accountProvider,
             formState = formState.value,
+            step = step.value,
             registerAction = registerAction.value,
             pendingRegistration = pendingRegistration.value,
+            canResendEmail = resendBlockedUntilMs.value == null,
             eventSink = ::handleEvent,
         )
     }
 
-    private fun CoroutineScope.startRegistration(
+    private fun CoroutineScope.startRegistrationEmail(
         homeserverUrl: String,
-        formState: NativeRegistrationFormState,
+        formState: MutableState<NativeRegistrationFormState>,
         pendingRegistration: MutableState<PendingRegistration?>,
         registerAction: MutableState<AsyncData<SessionId>>,
+        step: MutableState<NativeRegistrationStep>,
     ) = launch {
         registerAction.value = AsyncData.Loading()
         pendingRegistration.value = null
-        if (formState.password != formState.confirmPassword) {
-            registerAction.value = AsyncData.Failure(NativeRegistrationValidationException.PasswordMismatch)
-            return@launch
-        }
         nativeAuthService.startRegistration(
             homeserverUrl = homeserverUrl,
-            username = formState.username.trim(),
-            password = formState.password,
-            email = formState.email.trim(),
-            registrationToken = formState.registrationToken.trim(),
+            email = formState.value.email.trim(),
         ).onSuccess { result ->
-            handleRegistrationResult(result, pendingRegistration, registerAction)
+            when (result) {
+                is RegistrationResult.AwaitingEmailVerification -> {
+                    pendingRegistration.value = result.pendingRegistration
+                    step.value = NativeRegistrationStep.Code
+                    updateFormState(formState) {
+                        copy(verificationCode = "")
+                    }
+                    registerAction.value = AsyncData.Uninitialized
+                }
+                else -> {
+                    registerAction.value = AsyncData.Failure(IllegalStateException("Unexpected registration state"))
+                }
+            }
         }.onFailure { failure ->
             registerAction.value = AsyncData.Failure(failure)
         }
     }
 
-    private fun CoroutineScope.continueRegistration(
+    private fun CoroutineScope.submitRegistrationEmailCode(
+        formState: MutableState<NativeRegistrationFormState>,
         pendingRegistration: MutableState<PendingRegistration?>,
         registerAction: MutableState<AsyncData<SessionId>>,
+        step: MutableState<NativeRegistrationStep>,
     ) = launch {
         val currentPendingRegistration = pendingRegistration.value ?: return@launch
         registerAction.value = AsyncData.Loading()
-        nativeAuthService.continueRegistration(currentPendingRegistration)
-            .onSuccess { result ->
-                handleRegistrationResult(result, pendingRegistration, registerAction)
+        nativeAuthService.submitRegistrationEmailCode(
+            pendingRegistration = currentPendingRegistration,
+            verificationCode = formState.value.verificationCode.trim(),
+        ).onSuccess { result ->
+            when (result) {
+                is RegistrationResult.AwaitingCredentials -> {
+                    pendingRegistration.value = result.pendingRegistration
+                    step.value = NativeRegistrationStep.Credentials
+                    registerAction.value = AsyncData.Uninitialized
+                }
+                else -> {
+                    registerAction.value = AsyncData.Failure(IllegalStateException("Unexpected registration state"))
+                }
             }
-            .onFailure { failure ->
-                registerAction.value = AsyncData.Failure(failure)
-            }
+        }.onFailure { failure ->
+            registerAction.value = AsyncData.Failure(failure)
+        }
     }
 
     private fun CoroutineScope.resendEmail(
         pendingRegistration: MutableState<PendingRegistration?>,
         registerAction: MutableState<AsyncData<SessionId>>,
+        resendBlockedUntilMs: MutableState<Long?>,
     ) = launch {
         val currentPendingRegistration = pendingRegistration.value ?: return@launch
         registerAction.value = AsyncData.Loading()
         nativeAuthService.resendRegistrationEmail(currentPendingRegistration)
             .onSuccess { updatedPendingRegistration ->
+                resendBlockedUntilMs.value = null
                 pendingRegistration.value = updatedPendingRegistration
                 registerAction.value = AsyncData.Uninitialized
             }
             .onFailure { failure ->
+                if (failure is NativeAuthException.RateLimited) {
+                    failure.retryAfterMs?.let { retryAfterMs ->
+                        resendBlockedUntilMs.value = System.currentTimeMillis() + retryAfterMs
+                    }
+                }
                 registerAction.value = AsyncData.Failure(failure)
             }
     }
 
-    private suspend fun handleRegistrationResult(
-        result: RegistrationResult,
+    private fun CoroutineScope.finishRegistration(
+        formState: MutableState<NativeRegistrationFormState>,
         pendingRegistration: MutableState<PendingRegistration?>,
         registerAction: MutableState<AsyncData<SessionId>>,
-    ) {
-        when (result) {
-            is RegistrationResult.AwaitingEmailVerification -> {
-                pendingRegistration.value = result.pendingRegistration
-                registerAction.value = AsyncData.Uninitialized
+    ) = launch {
+        val currentPendingRegistration = pendingRegistration.value ?: return@launch
+        registerAction.value = AsyncData.Loading()
+        nativeAuthService.finishRegistration(
+            pendingRegistration = currentPendingRegistration,
+            username = formState.value.username,
+            password = formState.value.password,
+        ).onSuccess { result ->
+            when (result) {
+                is RegistrationResult.Success -> {
+                    matrixAuthenticationService.importCreatedSession(result.externalSession)
+                        .onSuccess { sessionId ->
+                            registerAction.value = AsyncData.Success(sessionId)
+                        }
+                        .onFailure { failure ->
+                            registerAction.value = AsyncData.Failure(failure)
+                        }
+                }
+                else -> {
+                    registerAction.value = AsyncData.Failure(IllegalStateException("Unexpected registration state"))
+                }
             }
-            is RegistrationResult.Success -> {
-                pendingRegistration.value = null
-                matrixAuthenticationService.importCreatedSession(result.externalSession)
-                    .onSuccess { sessionId ->
-                        registerAction.value = AsyncData.Success(sessionId)
-                    }
-                    .onFailure { failure ->
-                        registerAction.value = AsyncData.Failure(failure)
-                    }
-            }
+        }.onFailure { failure ->
+            registerAction.value = AsyncData.Failure(failure)
         }
     }
 
@@ -180,8 +281,4 @@ class NativeRegistrationPresenter(
     ) {
         formState.value = updateLambda(formState.value)
     }
-}
-
-sealed class NativeRegistrationValidationException : Exception() {
-    data object PasswordMismatch : NativeRegistrationValidationException()
 }

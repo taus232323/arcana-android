@@ -7,6 +7,7 @@
 
 package io.element.android.features.login.impl.nativeauth
 
+import android.os.Parcelable
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -16,6 +17,7 @@ import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.matrix.api.auth.external.ExternalSession
 import io.element.android.libraries.network.RetrofitFactory
 import kotlinx.serialization.json.jsonObject
+import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.Response
 import java.util.UUID
@@ -23,14 +25,18 @@ import java.util.UUID
 interface MatrixNativeAuthService {
     suspend fun startRegistration(
         homeserverUrl: String,
-        username: String,
-        password: String,
         email: String,
-        registrationToken: String,
     ): Result<RegistrationResult>
 
-    suspend fun continueRegistration(
+    suspend fun submitRegistrationEmailCode(
         pendingRegistration: PendingRegistration,
+        verificationCode: String,
+    ): Result<RegistrationResult>
+
+    suspend fun finishRegistration(
+        pendingRegistration: PendingRegistration,
+        username: String,
+        password: String,
     ): Result<RegistrationResult>
 
     suspend fun resendRegistrationEmail(
@@ -50,6 +56,20 @@ interface MatrixNativeAuthService {
     suspend fun resendPasswordResetEmail(
         pendingPasswordReset: PendingPasswordReset,
     ): Result<PendingPasswordReset>
+
+    suspend fun startEmailLogin(
+        homeserverUrl: String,
+        login: String,
+        password: String,
+    ): Result<EmailLoginResult>
+
+    suspend fun continueEmailLogin(
+        pendingEmailLogin: PendingEmailLogin,
+    ): Result<EmailLoginResult>
+
+    suspend fun resendEmailLoginCode(
+        pendingEmailLogin: PendingEmailLogin,
+    ): Result<PendingEmailLogin>
 }
 
 @ContributesBinding(AppScope::class)
@@ -60,60 +80,81 @@ class DefaultMatrixNativeAuthService(
 ) : MatrixNativeAuthService {
     override suspend fun startRegistration(
         homeserverUrl: String,
-        username: String,
-        password: String,
         email: String,
-        registrationToken: String,
     ): Result<RegistrationResult> = runCatchingExceptions {
+        if (email.isBlank()) {
+            throw NativeAuthException.EmailRequired
+        }
         val baseUrl = homeserverUrl.toApiBaseUrl()
-        advanceRegistration(
-            pendingRegistration = PendingRegistration(
-                homeserverUrl = baseUrl,
-                username = username.trim(),
-                password = password,
-                email = email.trim(),
-                registrationToken = registrationToken.trim(),
-                clientSecret = UUID.randomUUID().toString(),
-                sendAttempt = 0,
-                sid = null,
-                session = null,
-                completedStages = emptyList(),
-                flows = emptyList(),
-            ),
-            response = api(baseUrl).register(
-                RegisterRequest(
-                    username = username.trim(),
-                    password = password,
-                    initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
-                )
-            ),
-            attemptedStage = null,
+        val pendingRegistration = PendingRegistration(
+            homeserverUrl = baseUrl,
+            email = email.trim(),
+            clientSecret = UUID.randomUUID().toString(),
+            sendAttempt = 1,
+            sid = null,
         )
+        val response = api(baseUrl).requestRegistrationEmailToken(
+            EmailRequestTokenRequest(
+                clientSecret = pendingRegistration.clientSecret,
+                email = pendingRegistration.email,
+                sendAttempt = pendingRegistration.sendAttempt,
+            )
+        )
+        if (response.isSuccessful) {
+            RegistrationResult.AwaitingEmailVerification(
+                pendingRegistration.copy(sid = requireNotNull(response.body()).sid)
+            )
+        } else {
+            throw parseError(response.errorBody())
+        }
     }
 
-    override suspend fun continueRegistration(
+    override suspend fun submitRegistrationEmailCode(
         pendingRegistration: PendingRegistration,
+        verificationCode: String,
     ): Result<RegistrationResult> = runCatchingExceptions {
-        val next = pendingRegistration.withEmailSession()
-        advanceRegistration(
-            pendingRegistration = next,
-            response = api(next.homeserverUrl).register(
-                RegisterRequest(
-                    username = next.username,
-                    password = next.password,
-                    initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
-                    auth = AuthRequest(
-                        type = EMAIL_IDENTITY_STAGE,
-                        session = next.session,
-                        threePidCreds = ThreePidCredentials(
-                            clientSecret = next.clientSecret,
-                            sid = requireNotNull(next.sid),
-                        ),
-                    ),
-                )
-            ),
-            attemptedStage = EMAIL_IDENTITY_STAGE,
+        val response = api(pendingRegistration.homeserverUrl).submitRegistrationEmailToken(
+            RegistrationEmailSubmitRequest(
+                clientSecret = pendingRegistration.clientSecret,
+                sid = requireNotNull(pendingRegistration.sid),
+                token = verificationCode,
+            )
         )
+        if (response.isSuccessful) {
+            RegistrationResult.AwaitingCredentials(
+                pendingRegistration.copy(sid = requireNotNull(response.body()).sid)
+            )
+        } else {
+            throw when (val error = parseError(response.errorBody())) {
+                NativeAuthException.InvalidCredentials -> NativeAuthException.InvalidVerificationCode
+                is NativeAuthException.MessageError -> NativeAuthException.InvalidVerificationCode
+                else -> error
+            }
+        }
+    }
+
+    override suspend fun finishRegistration(
+        pendingRegistration: PendingRegistration,
+        username: String,
+        password: String,
+    ): Result<RegistrationResult> = runCatchingExceptions {
+        val response = api(pendingRegistration.homeserverUrl).register(
+            RegisterRequest(
+                email = pendingRegistration.email,
+                clientSecret = pendingRegistration.clientSecret,
+                sid = requireNotNull(pendingRegistration.sid),
+                password = password,
+                username = username.trim(),
+                initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
+            )
+        )
+        if (response.isSuccessful) {
+            RegistrationResult.Success(
+                externalSession = requireNotNull(response.body()).toExternalSession(pendingRegistration.homeserverUrl)
+            )
+        } else {
+            throw parseError(response.errorBody())
+        }
     }
 
     override suspend fun resendRegistrationEmail(
@@ -202,107 +243,116 @@ class DefaultMatrixNativeAuthService(
         }
     }
 
-    private suspend fun advanceRegistration(
-        pendingRegistration: PendingRegistration,
-        response: Response<RegisterResponse>,
-        attemptedStage: String?,
-    ): RegistrationResult {
+    override suspend fun startEmailLogin(
+        homeserverUrl: String,
+        login: String,
+        password: String,
+    ): Result<EmailLoginResult> = runCatchingExceptions {
+        val baseUrl = homeserverUrl.toApiBaseUrl()
+        val pendingEmailLogin = PendingEmailLogin(
+            homeserverUrl = baseUrl,
+            login = login.trim(),
+            password = password,
+            clientSecret = UUID.randomUUID().toString(),
+            sendAttempt = 0,
+            sid = null,
+            email = null,
+        )
+        val response = api(baseUrl).requestEmailLoginToken(
+            EmailLoginRequestTokenRequest(
+                clientSecret = pendingEmailLogin.clientSecret,
+                login = pendingEmailLogin.login,
+                password = pendingEmailLogin.password,
+                sendAttempt = pendingEmailLogin.sendAttempt + 1,
+            )
+        )
         if (response.isSuccessful) {
             val body = requireNotNull(response.body())
-            return RegistrationResult.Success(
-                ExternalSession(
-                    userId = body.userId,
-                    deviceId = body.deviceId,
-                    accessToken = body.accessToken,
-                    refreshToken = body.refreshToken,
-                    homeserverUrl = normalizeHomeserverUrl(
-                        homeserverUrl = body.homeServer,
-                        fallbackUrl = pendingRegistration.homeserverUrl,
-                    ),
+            EmailLoginResult.AwaitingEmailVerification(
+                pendingEmailLogin.copy(
+                    sendAttempt = pendingEmailLogin.sendAttempt + 1,
+                    sid = body.sid,
+                    email = body.email ?: throw NativeAuthException.EmailVerificationUnavailable,
                 )
             )
+        } else {
+            throw parseError(response.errorBody())
         }
-        val uiaa = parseUiaa(response.errorBody())
-        val updated = pendingRegistration.copy(
-            session = uiaa.session ?: pendingRegistration.session,
-            completedStages = uiaa.completed,
-            flows = uiaa.flows,
+    }
+
+    override suspend fun continueEmailLogin(
+        pendingEmailLogin: PendingEmailLogin,
+    ): Result<EmailLoginResult> = runCatchingExceptions {
+        val next = pendingEmailLogin.withEmailSession()
+        val response = api(next.homeserverUrl).submitEmailLoginToken(
+            EmailLoginSubmitRequest(
+                clientSecret = next.clientSecret,
+                sid = requireNotNull(next.sid),
+                token = next.verificationCode,
+                deviceId = null,
+                initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
+            )
         )
-        val registrationFlow = updated.compatibleFlow()
-        if (attemptedStage == EMAIL_IDENTITY_STAGE && EMAIL_IDENTITY_STAGE !in updated.completedStages) {
-            return RegistrationResult.AwaitingEmailVerification(updated)
-        }
-        val nextStage = registrationFlow.firstOrNull { it !in updated.completedStages }
-        return when (nextStage) {
-            REGISTRATION_TOKEN_STAGE -> {
-                if (updated.registrationToken.isBlank()) {
-                    throw NativeAuthException.RegistrationTokenRequired
-                }
-                advanceRegistration(
-                    pendingRegistration = updated,
-                    response = api(updated.homeserverUrl).register(
-                        RegisterRequest(
-                            username = updated.username,
-                            password = updated.password,
-                            initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
-                            auth = AuthRequest(
-                                type = REGISTRATION_TOKEN_STAGE,
-                                session = updated.session,
-                                token = updated.registrationToken,
-                            ),
-                        )
-                    ),
-                    attemptedStage = REGISTRATION_TOKEN_STAGE,
-                )
-            }
-            DUMMY_STAGE -> advanceRegistration(
-                pendingRegistration = updated,
-                response = api(updated.homeserverUrl).register(
-                    RegisterRequest(
-                        username = updated.username,
-                        password = updated.password,
-                        initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
-                        auth = AuthRequest(
-                            type = DUMMY_STAGE,
-                            session = updated.session,
-                        ),
-                    )
-                ),
-                attemptedStage = DUMMY_STAGE,
+        if (response.isSuccessful) {
+            EmailLoginResult.Success(
+                externalSession = requireNotNull(response.body()).toExternalSession(next.homeserverUrl)
             )
-            EMAIL_IDENTITY_STAGE -> {
-                if (updated.email.isBlank()) {
-                    throw NativeAuthException.EmailRequired
-                }
-                if (updated.sid == null) {
-                    val emailResponse = api(updated.homeserverUrl).requestRegistrationEmailToken(
-                        EmailRequestTokenRequest(
-                            clientSecret = updated.clientSecret,
-                            email = updated.email,
-                            sendAttempt = updated.sendAttempt + 1,
-                        )
-                    )
-                    if (!emailResponse.isSuccessful) {
-                        throw parseError(emailResponse.errorBody())
-                    }
-                    RegistrationResult.AwaitingEmailVerification(
-                        updated.copy(
-                            sid = requireNotNull(emailResponse.body()).sid,
-                            sendAttempt = updated.sendAttempt + 1,
-                        )
-                    )
-                } else {
-                    RegistrationResult.AwaitingEmailVerification(updated)
-                }
+        } else {
+            val error = parseError(response.errorBody())
+            throw when (error) {
+                is NativeAuthException.InvalidCredentials,
+                is NativeAuthException.MessageError -> NativeAuthException.InvalidVerificationCode
+                else -> error
             }
-            null -> {
-                if (attemptedStage == REGISTRATION_TOKEN_STAGE && REGISTRATION_TOKEN_STAGE !in updated.completedStages) {
-                    throw NativeAuthException.InvalidRegistrationToken
-                }
-                throw NativeAuthException.UnsupportedAuthenticationFlow(updated.flows.map { it.stages })
-            }
-            else -> throw NativeAuthException.UnsupportedAuthenticationFlow(updated.flows.map { it.stages })
         }
+    }
+
+    override suspend fun resendEmailLoginCode(
+        pendingEmailLogin: PendingEmailLogin,
+    ): Result<PendingEmailLogin> = runCatchingExceptions {
+        val updated = pendingEmailLogin.copy(sendAttempt = pendingEmailLogin.sendAttempt + 1)
+        val response = api(updated.homeserverUrl).requestEmailLoginToken(
+            EmailLoginRequestTokenRequest(
+                clientSecret = updated.clientSecret,
+                login = updated.login,
+                password = updated.password,
+                sendAttempt = updated.sendAttempt,
+            )
+        )
+        if (response.isSuccessful) {
+            updated.copy(
+                sid = requireNotNull(response.body()).sid,
+                email = requireNotNull(response.body()).email,
+            )
+        } else {
+            throw parseError(response.errorBody())
+        }
+    }
+
+    private fun LoginResponse.toExternalSession(fallbackUrl: String): ExternalSession {
+        return ExternalSession(
+            userId = userId,
+            deviceId = deviceId,
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            homeserverUrl = normalizeHomeserverUrl(
+                homeserverUrl = homeServer,
+                fallbackUrl = fallbackUrl,
+            ),
+        )
+    }
+
+    private fun RegisterResponse.toExternalSession(fallbackUrl: String): ExternalSession {
+        return ExternalSession(
+            userId = userId,
+            deviceId = deviceId,
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            homeserverUrl = normalizeHomeserverUrl(
+                homeserverUrl = homeServer,
+                fallbackUrl = fallbackUrl,
+            ),
+        )
     }
 
     private suspend fun advancePasswordReset(
@@ -365,6 +415,12 @@ class DefaultMatrixNativeAuthService(
         }
     }
 
+    private fun PendingPasswordReset.compatibleFlow(): List<String> {
+        return flows.firstOrNull { flow ->
+            flow.stages.isNotEmpty() && flow.stages.all { it in knownPasswordResetStages }
+        }?.stages.orEmpty()
+    }
+
     private fun parseUiaa(errorBody: ResponseBody?): UiaaResponse {
         val payload = errorBody?.string()
         return runCatchingExceptions {
@@ -389,10 +445,16 @@ class DefaultMatrixNativeAuthService(
             jsonProvider().decodeFromString(UiaaResponse.serializer(), payload)
         }.getOrNull()
         return when (response?.errcode) {
+            "M_FORBIDDEN" -> NativeAuthException.InvalidCredentials
+            "M_UNAUTHORIZED" -> NativeAuthException.InvalidCredentials
             "M_INVALID_USERNAME" -> NativeAuthException.InvalidUsername
             "M_USER_IN_USE" -> NativeAuthException.UsernameInUse
             "M_THREEPID_IN_USE" -> NativeAuthException.EmailAlreadyInUse
             "M_THREEPID_DENIED" -> NativeAuthException.InvalidEmail
+            "M_INVALID_CREDENTIALS" -> NativeAuthException.InvalidCredentials
+            "M_INVALID_TOKEN" -> NativeAuthException.InvalidVerificationCode
+            "M_EMAIL_LOGIN_CODE_EXPIRED" -> NativeAuthException.InvalidVerificationCode
+            "M_NOT_FOUND" -> NativeAuthException.EmailVerificationUnavailable
             "M_LIMIT_EXCEEDED" -> {
                 val retryAfterMs = runCatchingExceptions {
                     payload ?: return@runCatchingExceptions null
@@ -412,27 +474,15 @@ class DefaultMatrixNativeAuthService(
         return retrofitFactory.create(baseUrl).create(MatrixNativeAuthAPI::class.java)
     }
 
-    private fun PendingRegistration.compatibleFlow(): List<String> {
-        return flows.firstOrNull { flow ->
-            flow.stages.isNotEmpty() && flow.stages.all { it in knownRegistrationStages }
-        }?.stages.orEmpty()
-    }
-
-    private fun PendingPasswordReset.compatibleFlow(): List<String> {
-        return flows.firstOrNull { flow ->
-            flow.stages.isNotEmpty() && flow.stages.all { it in knownPasswordResetStages }
-        }?.stages.orEmpty()
-    }
-
-    private fun PendingRegistration.withEmailSession(): PendingRegistration {
+    private fun PendingPasswordReset.withEmailSession(): PendingPasswordReset {
         check(session != null) { "UIAA session is required for email verification." }
         check(sid != null) { "Email sid is required for email verification." }
         return this
     }
 
-    private fun PendingPasswordReset.withEmailSession(): PendingPasswordReset {
-        check(session != null) { "UIAA session is required for email verification." }
+    private fun PendingEmailLogin.withEmailSession(): PendingEmailLogin {
         check(sid != null) { "Email sid is required for email verification." }
+        check(email != null) { "Email is required for email verification." }
         return this
     }
 
@@ -454,13 +504,6 @@ class DefaultMatrixNativeAuthService(
         const val DUMMY_STAGE = "m.login.dummy"
         const val EMAIL_IDENTITY_STAGE = "m.login.email.identity"
         const val REGISTRATION_TOKEN_STAGE = "m.login.registration_token"
-
-        val knownRegistrationStages = setOf(
-            REGISTRATION_TOKEN_STAGE,
-            EMAIL_IDENTITY_STAGE,
-            DUMMY_STAGE,
-        )
-
         val knownPasswordResetStages = setOf(
             EMAIL_IDENTITY_STAGE,
             DUMMY_STAGE,
@@ -470,6 +513,10 @@ class DefaultMatrixNativeAuthService(
 
 sealed interface RegistrationResult {
     data class AwaitingEmailVerification(
+        val pendingRegistration: PendingRegistration,
+    ) : RegistrationResult
+
+    data class AwaitingCredentials(
         val pendingRegistration: PendingRegistration,
     ) : RegistrationResult
 
@@ -486,19 +533,24 @@ sealed interface PasswordResetResult {
     data object Success : PasswordResetResult
 }
 
+sealed interface EmailLoginResult {
+    data class AwaitingEmailVerification(
+        val pendingEmailLogin: PendingEmailLogin,
+    ) : EmailLoginResult
+
+    data class Success(
+        val externalSession: ExternalSession,
+    ) : EmailLoginResult
+}
+
+@Parcelize
 data class PendingRegistration(
     val homeserverUrl: String,
-    val username: String,
-    val password: String,
     val email: String,
-    val registrationToken: String,
     val clientSecret: String,
     val sendAttempt: Int,
     val sid: String?,
-    val session: String?,
-    val completedStages: List<String>,
-    val flows: List<UiaaFlow>,
-)
+) : Parcelable
 
 data class PendingPasswordReset(
     val homeserverUrl: String,
@@ -512,14 +564,28 @@ data class PendingPasswordReset(
     val flows: List<UiaaFlow>,
 )
 
+@Parcelize
+data class PendingEmailLogin(
+    val homeserverUrl: String,
+    val login: String,
+    val password: String,
+    val clientSecret: String,
+    val sendAttempt: Int,
+    val sid: String?,
+    val email: String?,
+    val verificationCode: String = "",
+) : Parcelable
+
 sealed class NativeAuthException(message: String? = null) : Exception(message) {
     data object EmailRequired : NativeAuthException()
-    data object RegistrationTokenRequired : NativeAuthException()
     data object InvalidUsername : NativeAuthException()
     data object UsernameInUse : NativeAuthException()
     data object InvalidEmail : NativeAuthException()
     data object EmailAlreadyInUse : NativeAuthException()
     data object InvalidRegistrationToken : NativeAuthException()
+    data object InvalidCredentials : NativeAuthException()
+    data object InvalidVerificationCode : NativeAuthException()
+    data object EmailVerificationUnavailable : NativeAuthException()
     data class RateLimited(val retryAfterMs: Long?) : NativeAuthException()
     data class UnsupportedAuthenticationFlow(val flows: List<List<String>>) : NativeAuthException()
     data class MessageError(val details: String?) : NativeAuthException(details)

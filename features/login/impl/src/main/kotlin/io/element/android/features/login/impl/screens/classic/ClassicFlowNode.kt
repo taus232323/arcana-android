@@ -135,8 +135,8 @@ class ClassicFlowNode(
             }
             NavTarget.MissingKeyBackup -> {
                 val callback = object : MissingKeyBackupNode.Callback {
-                    override fun navigateBack() {
-                        backstack.pop()
+                    override fun navigateToOtherOptions() {
+                        callback.navigateToOnBoarding(allowBackNavigation = true)
                     }
                 }
                 createNode<MissingKeyBackupNode>(buildContext, listOf(callback))

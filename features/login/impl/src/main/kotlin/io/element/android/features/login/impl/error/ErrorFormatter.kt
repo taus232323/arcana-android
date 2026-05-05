@@ -10,6 +10,7 @@ package io.element.android.features.login.impl.error
 
 import androidx.annotation.StringRes
 import io.element.android.features.login.impl.R
+import io.element.android.features.login.impl.nativeauth.NativeAuthException
 import io.element.android.libraries.matrix.api.auth.AuthErrorCode
 import io.element.android.libraries.matrix.api.auth.AuthenticationException
 import io.element.android.libraries.matrix.api.auth.errorCode
@@ -19,10 +20,16 @@ import io.element.android.libraries.ui.strings.CommonStrings
 fun loginError(
     throwable: Throwable
 ): Int {
-    val authException = throwable as? AuthenticationException ?: return CommonStrings.error_unknown
-    return when (authException.errorCode) {
-        AuthErrorCode.FORBIDDEN -> R.string.screen_login_error_invalid_credentials
-        AuthErrorCode.USER_DEACTIVATED -> R.string.screen_login_error_deactivated_account
-        AuthErrorCode.UNKNOWN -> CommonStrings.error_unknown
+    return when (throwable) {
+        is AuthenticationException -> when (throwable.errorCode) {
+            AuthErrorCode.FORBIDDEN -> R.string.screen_login_error_invalid_credentials
+            AuthErrorCode.USER_DEACTIVATED -> R.string.screen_login_error_deactivated_account
+            AuthErrorCode.UNKNOWN -> CommonStrings.error_unknown
+        }
+        is NativeAuthException.InvalidCredentials -> R.string.screen_login_error_invalid_credentials
+        is NativeAuthException.InvalidVerificationCode -> R.string.screen_login_error_invalid_code
+        is NativeAuthException.EmailVerificationUnavailable -> R.string.screen_login_error_email_verification_unavailable
+        is NativeAuthException.RateLimited -> R.string.screen_login_error_rate_limited
+        else -> CommonStrings.error_unknown
     }
 }

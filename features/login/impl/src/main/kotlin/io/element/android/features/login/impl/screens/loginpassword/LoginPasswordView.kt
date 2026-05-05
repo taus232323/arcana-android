@@ -61,6 +61,7 @@ import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.theme.components.Button
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Scaffold
+import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TextButton
 import io.element.android.libraries.designsystem.theme.components.TextField
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
@@ -80,7 +81,11 @@ fun LoginPasswordView(
 
     BackHandler {
         autofillManager?.cancel()
-        onBackClick()
+        if (state.isAwaitingEmailVerification) {
+            state.eventSink(LoginPasswordEvents.GoBack)
+        } else {
+            onBackClick()
+        }
     }
 
     val isLoading by remember(state.loginAction) {
@@ -91,11 +96,8 @@ fun LoginPasswordView(
     val focusManager = LocalFocusManager.current
 
     fun submit() {
-        // Clear focus to prevent keyboard issues with textfields
         focusManager.clearFocus(force = true)
-
         autofillManager?.commit()
-
         state.eventSink(LoginPasswordEvents.Submit)
     }
 
@@ -104,11 +106,15 @@ fun LoginPasswordView(
         topBar = {
             TopAppBar(
                 title = {},
-                navigationIcon = {
-                    BackButton(onClick = {
-                        autofillManager?.cancel()
-                        onBackClick()
-                    })
+                    navigationIcon = {
+                        BackButton(onClick = {
+                            autofillManager?.cancel()
+                            if (state.isAwaitingEmailVerification) {
+                                state.eventSink(LoginPasswordEvents.GoBack)
+                            } else {
+                                onBackClick()
+                            }
+                        })
                 },
             )
         }
@@ -124,35 +130,45 @@ fun LoginPasswordView(
                 .verticalScroll(state = scrollState)
                 .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
         ) {
-            // Title
             IconTitleSubtitleMolecule(
                 modifier = Modifier.padding(top = 20.dp, start = 16.dp, end = 16.dp),
                 iconStyle = BigIcon.Style.Default(CompoundIcons.UserProfileSolid()),
-                title = stringResource(
-                    id = R.string.screen_account_provider_signin_title,
-                    state.accountProvider.title
-                ),
-                subTitle = stringResource(id = R.string.screen_login_subtitle)
+                title = if (state.isAwaitingEmailVerification) {
+                    stringResource(R.string.screen_login_email_verification_title)
+                } else {
+                    stringResource(R.string.screen_login_credentials_title)
+                },
+                subTitle = if (state.isAwaitingEmailVerification) {
+                    stringResource(R.string.screen_login_email_verification_subtitle)
+                } else {
+                    stringResource(R.string.screen_login_credentials_subtitle)
+                }
             )
-            Spacer(Modifier.height(40.dp))
-            LoginForm(
-                state = state,
-                isLoading = isLoading,
-                onSubmit = ::submit,
-                onForgotPasswordClick = onForgotPasswordClick,
-            )
-            // Min spacing
+            Spacer(Modifier.height(32.dp))
+
+            if (state.isAwaitingEmailVerification) {
+                LoginVerificationContent(
+                    state = state,
+                    isLoading = isLoading,
+                    onSubmit = ::submit,
+                )
+            } else {
+                LoginForm(
+                    state = state,
+                    isLoading = isLoading,
+                    onSubmit = ::submit,
+                    onForgotPasswordClick = onForgotPasswordClick,
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
-            // Flexible spacing to keep the submit button at the bottom
             Spacer(modifier = Modifier.weight(1f))
-            // Submit
             Box(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 ButtonColumnMolecule {
                     Button(
-                        text = stringResource(CommonStrings.action_continue),
+                        text = if (state.isAwaitingEmailVerification) stringResource(CommonStrings.action_confirm) else stringResource(R.string.action_sign_in),
                         showProgress = isLoading,
                         onClick = ::submit,
                         enabled = state.submitEnabled || isLoading,
@@ -160,6 +176,14 @@ fun LoginPasswordView(
                             .fillMaxWidth()
                             .testTag(TestTags.loginContinue)
                     )
+                    if (state.isAwaitingEmailVerification) {
+                        TextButton(
+                            text = stringResource(R.string.screen_login_action_resend_code),
+                            onClick = { state.eventSink(LoginPasswordEvents.ResendVerificationCode) },
+                            enabled = !isLoading && state.canResendVerificationCode,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     Spacer(modifier = Modifier.height(48.dp))
                 }
             }
@@ -187,8 +211,14 @@ private fun LoginForm(
     val eventSink = state.eventSink
 
     Column {
+        Text(
+            text = stringResource(R.string.screen_login_form_header),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
+        )
+        Spacer(Modifier.height(12.dp))
         TextField(
-            label = stringResource(R.string.screen_login_form_header),
+            label = stringResource(R.string.screen_login_login_label),
             value = loginFieldState,
             enabled = !isLoading,
             modifier = Modifier
@@ -198,7 +228,7 @@ private fun LoginForm(
                 .semantics {
                     contentType = ContentType.Username
                 },
-            placeholder = stringResource(CommonStrings.common_username),
+            placeholder = stringResource(R.string.screen_login_login_label),
             onValueChange = {
                 val sanitized = it.sanitize()
                 loginFieldState = sanitized
@@ -231,7 +261,6 @@ private fun LoginForm(
         )
         var passwordVisible by remember { mutableStateOf(false) }
         if (state.loginAction is AsyncData.Loading) {
-            // Ensure password is hidden when user submits the form
             passwordVisible = false
         }
         Spacer(Modifier.height(20.dp))
@@ -280,6 +309,68 @@ private fun LoginForm(
                 onForgotPasswordClick(state.formState.login.trim())
             },
             enabled = !isLoading,
+        )
+    }
+}
+
+@Composable
+private fun LoginVerificationContent(
+    state: LoginPasswordState,
+    isLoading: Boolean,
+    onSubmit: () -> Unit,
+) {
+    var verificationCodeFieldState by textFieldState(stateValue = state.formState.verificationCode)
+    val focusManager = LocalFocusManager.current
+    val eventSink = state.eventSink
+
+    Column {
+        Text(
+            text = stringResource(R.string.screen_login_email_verification_hint),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textPrimary,
+        )
+        Spacer(Modifier.height(16.dp))
+        TextField(
+            label = stringResource(R.string.screen_login_verification_code_label),
+            value = verificationCodeFieldState,
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onTabOrEnterKeyFocusNext(focusManager)
+                .testTag(TestTags.loginVerificationCode)
+                .semantics {
+                    contentType = ContentType.Password
+                },
+            placeholder = stringResource(R.string.screen_login_verification_code_label),
+            onValueChange = {
+                val sanitized = it.sanitize()
+                verificationCodeFieldState = sanitized
+                eventSink(LoginPasswordEvents.SetVerificationCode(sanitized))
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { onSubmit() }
+            ),
+            singleLine = true,
+            trailingIcon = if (verificationCodeFieldState.isNotEmpty()) {
+                {
+                    Box(Modifier.clickable {
+                        verificationCodeFieldState = ""
+                        eventSink(LoginPasswordEvents.SetVerificationCode(""))
+                    }) {
+                        Icon(
+                            imageVector = CompoundIcons.Close(),
+                            contentDescription = stringResource(CommonStrings.action_clear),
+                            tint = ElementTheme.colors.iconSecondary
+                        )
+                    }
+                }
+            } else {
+                null
+            },
         )
     }
 }

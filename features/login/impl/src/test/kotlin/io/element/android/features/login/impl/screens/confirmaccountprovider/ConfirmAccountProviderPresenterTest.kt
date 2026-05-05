@@ -306,7 +306,7 @@ class ConfirmAccountProviderPresenterTest {
     }
 
     @Test
-    fun `present - confirm account creation with oidc is successful`() = runTest {
+    fun `present - confirm account creation with oidc continues with native registration`() = runTest {
         val authenticationService = FakeMatrixAuthenticationService(
             setHomeserverResult = {
                 Result.success(aMatrixHomeServerDetails(supportsOidcLogin = true))
@@ -321,13 +321,12 @@ class ConfirmAccountProviderPresenterTest {
             initialState.eventSink(ConfirmAccountProviderEvents.Continue)
             skipItems(1) // Loading
             val submittedState = awaitItem()
-            assertThat(submittedState.loginMode).isInstanceOf(AsyncData.Success::class.java)
-            assertThat(submittedState.loginMode.dataOrNull()).isInstanceOf(LoginMode.Oidc::class.java)
+            assertThat(submittedState.loginMode.dataOrNull()).isEqualTo(LoginMode.NativeRegistration)
         }
     }
 
     @Test
-    fun `present - confirm account creation with oidc and url continues with oidc`() = runTest {
+    fun `present - confirm account creation with oidc and url continues with native registration`() = runTest {
         val aUrl = "aUrl"
         val authenticationService = FakeMatrixAuthenticationService(
             setHomeserverResult = {
@@ -344,8 +343,7 @@ class ConfirmAccountProviderPresenterTest {
             initialState.eventSink(ConfirmAccountProviderEvents.Continue)
             skipItems(1) // Loading
             val submittedState = awaitItem()
-            assertThat(submittedState.loginMode).isInstanceOf(AsyncData.Success::class.java)
-            assertThat(submittedState.loginMode.dataOrNull()).isInstanceOf(LoginMode.Oidc::class.java)
+            assertThat(submittedState.loginMode.dataOrNull()).isEqualTo(LoginMode.NativeRegistration)
         }
     }
 

@@ -25,6 +25,11 @@ internal interface MatrixNativeAuthAPI {
         @Body body: EmailRequestTokenRequest,
     ): Response<EmailRequestTokenResponse>
 
+    @POST("/_matrix/client/v3/register/email/submitToken")
+    suspend fun submitRegistrationEmailToken(
+        @Body body: RegistrationEmailSubmitRequest,
+    ): Response<EmailRequestTokenResponse>
+
     @POST("/_matrix/client/v3/account/password")
     suspend fun resetPassword(
         @Body body: ResetPasswordRequest,
@@ -34,17 +39,34 @@ internal interface MatrixNativeAuthAPI {
     suspend fun requestPasswordResetEmailToken(
         @Body body: EmailRequestTokenRequest,
     ): Response<EmailRequestTokenResponse>
+
+    @POST("/_matrix/client/v3/login/email/requestToken")
+    suspend fun requestEmailLoginToken(
+        @Body body: EmailLoginRequestTokenRequest,
+    ): Response<EmailLoginRequestTokenResponse>
+
+    @POST("/_matrix/client/v3/login/email/submitToken")
+    suspend fun submitEmailLoginToken(
+        @Body body: EmailLoginSubmitRequest,
+    ): Response<LoginResponse>
 }
 
 internal const val INITIAL_DEVICE_DISPLAY_NAME = ApplicationConfig.APPLICATION_NAME + " Android"
 
 @Serializable
 internal data class RegisterRequest(
+    val email: String,
+    @SerialName("client_secret")
+    val clientSecret: String,
+    val sid: String,
     val password: String,
-    val username: String = "",
+    val username: String,
+    @SerialName("device_id")
+    val deviceId: String? = null,
     @SerialName("initial_device_display_name")
     val initialDeviceDisplayName: String,
-    val auth: AuthRequest? = null,
+    @SerialName("inhibit_login")
+    val inhibitLogin: Boolean = false,
 )
 
 @Serializable
@@ -82,6 +104,56 @@ internal data class EmailRequestTokenRequest(
 @Serializable
 internal data class EmailRequestTokenResponse(
     val sid: String,
+)
+
+@Serializable
+internal data class RegistrationEmailSubmitRequest(
+    @SerialName("client_secret")
+    val clientSecret: String,
+    val sid: String,
+    val token: String,
+)
+
+@Serializable
+internal data class EmailLoginRequestTokenRequest(
+    @SerialName("client_secret")
+    val clientSecret: String,
+    val login: String,
+    val password: String,
+    @SerialName("send_attempt")
+    val sendAttempt: Int,
+)
+
+@Serializable
+internal data class EmailLoginRequestTokenResponse(
+    val sid: String,
+    val email: String? = null,
+)
+
+@Serializable
+internal data class EmailLoginSubmitRequest(
+    @SerialName("client_secret")
+    val clientSecret: String,
+    val sid: String,
+    val token: String,
+    @SerialName("device_id")
+    val deviceId: String? = null,
+    @SerialName("initial_device_display_name")
+    val initialDeviceDisplayName: String? = null,
+)
+
+@Serializable
+internal data class LoginResponse(
+    @SerialName("user_id")
+    val userId: String,
+    @SerialName("access_token")
+    val accessToken: String,
+    @SerialName("device_id")
+    val deviceId: String,
+    @SerialName("home_server")
+    val homeServer: String? = null,
+    @SerialName("refresh_token")
+    val refreshToken: String? = null,
 )
 
 @Serializable

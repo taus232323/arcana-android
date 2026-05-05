@@ -74,14 +74,14 @@ class LoginHelper(
                     throw it
                 }
             }.map { matrixHomeServerDetails ->
-                if (matrixHomeServerDetails.supportsOidcLogin) {
+                if (isAccountCreation) {
+                    LoginMode.NativeRegistration
+                } else if (matrixHomeServerDetails.supportsOidcLogin) {
                     // Retrieve the details right now
                     val oidcPrompt = if (isAccountCreation) OidcPrompt.Create else OidcPrompt.Login
                     LoginMode.Oidc(
                         authenticationService.getOidcUrl(prompt = oidcPrompt, loginHint = loginHint).getOrThrow()
                     )
-                } else if (isAccountCreation) {
-                    LoginMode.NativeRegistration
                 } else if (matrixHomeServerDetails.supportsPasswordLogin) {
                     LoginMode.PasswordLogin
                 } else {

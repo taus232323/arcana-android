@@ -17,38 +17,50 @@ import kotlinx.parcelize.Parcelize
 data class NativeRegistrationState(
     val accountProvider: AccountProvider,
     val formState: NativeRegistrationFormState,
+    val step: NativeRegistrationStep,
     val registerAction: AsyncData<SessionId>,
     val pendingRegistration: PendingRegistration?,
+    val canResendEmail: Boolean = true,
     val eventSink: (NativeRegistrationEvents) -> Unit,
 ) {
     val submitEnabled: Boolean
         get() = registerAction !is AsyncData.Loading &&
-            formState.hasRegistrationIdentity &&
-            formState.password.isNotBlank() &&
-            formState.confirmPassword.isNotBlank()
+            when (step) {
+                NativeRegistrationStep.Email -> formState.email.isNotBlank()
+                NativeRegistrationStep.Code -> formState.verificationCode.isNotBlank()
+                NativeRegistrationStep.Credentials -> formState.username.isNotBlank() && formState.password.isNotBlank()
+            }
 
     val isAwaitingEmailVerification: Boolean
-        get() = pendingRegistration != null
+        get() = step == NativeRegistrationStep.Code
+
+    val isAwaitingCredentials: Boolean
+        get() = step == NativeRegistrationStep.Credentials
+}
+
+enum class NativeRegistrationStep {
+    Email,
+    Code,
+    Credentials,
 }
 
 @Parcelize
 data class NativeRegistrationFormState(
-    val username: String,
     val email: String,
-    val registrationToken: String,
+    val verificationCode: String,
+    val username: String,
     val password: String,
-    val confirmPassword: String,
 ) : Parcelable {
-    val hasRegistrationIdentity: Boolean
-        get() = email.isNotBlank() || (registrationToken.isNotBlank() && username.isNotBlank())
-
     companion object {
         val Default = NativeRegistrationFormState(
-            username = "",
             email = "",
-            registrationToken = "",
+            verificationCode = "",
+            username = "",
             password = "",
-            confirmPassword = "",
         )
     }
+}
+
+sealed class NativeRegistrationValidationException : Exception() {
+    data object PasswordMismatch : NativeRegistrationValidationException()
 }

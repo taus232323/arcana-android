@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="screen_change_account_provider_default_subtitle">celesteai.ru is the default homeserver for this client.</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="screen_login_login_label">Login or email</string>
     <string name="screen_native_registration_title">Create account</string>
     <string name="screen_native_registration_subtitle">Create a new account on %1$s using a registration token and email verification.</string>
     <string name="screen_native_registration_username_label">Username (optional)</string>
@@ -34,6 +36,31 @@
     <string name="screen_password_reset_action_resend_email">Resend email</string>
     <string name="screen_password_reset_success_title">Password updated</string>
     <string name="screen_password_reset_success_message">Your password has been changed. You can sign in with the new password now.</string>
+    <string name="screen_login_email_verification_title">Check your email</string>
+    <string name="screen_login_email_verification_subtitle">We sent a code to your email address. Enter it here to finish signing in.</string>
+    <string name="screen_login_email_verification_hint">If you do not see the code, check spam or resend it.</string>
+    <string name="screen_login_verification_code_label">Verification code</string>
+    <string name="screen_login_action_resend_code">Resend code</string>
+    <string name="screen_login_credentials_title">Sign in</string>
+    <string name="screen_login_credentials_subtitle">Enter your login or email address, then your password.</string>
+    <string name="screen_login_error_invalid_code">That code is not valid. Try again or resend a new code.</string>
+    <string name="screen_login_error_email_verification_unavailable">This account cannot use email verification for login.</string>
+    <string name="screen_login_error_rate_limited">Too many attempts. Please wait and try again.</string>
+    <string name="screen_account_provider_signin_title_arcana">Sign in to Arcana</string>
+    <string name="screen_account_provider_signin_subtitle_arcana">Use your login or email address to continue.</string>
+    <string name="screen_account_provider_signup_title_arcana">Create an Arcana account</string>
+    <string name="screen_account_provider_signup_subtitle_arcana">Use your email address to create an account.</string>
+    <string name="screen_native_registration_email_step_title">Create your account</string>
+    <string name="screen_native_registration_email_step_subtitle">Start with your email address.</string>
+    <string name="screen_native_registration_email_step_body">We will send a verification code to your email before you can continue.</string>
+    <string name="screen_native_registration_code_step_title">Verify your email</string>
+    <string name="screen_native_registration_code_step_subtitle">We sent a code to %1$s. Enter it here to continue.</string>
+    <string name="screen_native_registration_code_step_body">Enter the code we sent to %1$s.</string>
+    <string name="screen_native_registration_credentials_step_title">Set up your account</string>
+    <string name="screen_native_registration_credentials_step_subtitle">Choose a username and password for Arcana.</string>
+    <string name="screen_native_registration_credentials_step_body">Now choose your username and password.</string>
+    <string name="screen_native_registration_action_create_account">Create account</string>
+    <string name="screen_native_registration_error_email_verification_unavailable">This email address cannot be used for login verification.</string>
     <string name="screen_onboarding_welcome_title_arcana">Welcome to Arcana</string>
     <string name="screen_missing_key_backup_open_arcana_classic">Open Arcana Classic</string>
     <string name="screen_missing_key_backup_step_1_arcana_classic">Open Arcana Classic on your device</string>

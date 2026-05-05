@@ -76,7 +76,11 @@ fun NativeRegistrationView(
     val autofillManager = LocalAutofillManager.current
     BackHandler {
         autofillManager?.cancel()
-        onBackClick()
+        if (state.step == NativeRegistrationStep.Email) {
+            onBackClick()
+        } else {
+            state.eventSink(NativeRegistrationEvents.GoBack)
+        }
     }
 
     val isLoading by remember(state.registerAction) {
@@ -98,7 +102,11 @@ fun NativeRegistrationView(
                 navigationIcon = {
                     BackButton(onClick = {
                         autofillManager?.cancel()
-                        onBackClick()
+                        if (state.step == NativeRegistrationStep.Email) {
+                            onBackClick()
+                        } else {
+                            state.eventSink(NativeRegistrationEvents.GoBack)
+                        }
                     })
                 },
             )
@@ -116,57 +124,58 @@ fun NativeRegistrationView(
             IconTitleSubtitleMolecule(
                 modifier = Modifier.padding(top = 20.dp, start = 16.dp, end = 16.dp),
                 iconStyle = BigIcon.Style.Default(CompoundIcons.UserProfileSolid()),
-                title = stringResource(R.string.screen_account_provider_signup_title, state.accountProvider.title),
-                subTitle = if (state.isAwaitingEmailVerification) {
-                    stringResource(R.string.screen_native_registration_email_verification_subtitle, state.formState.email)
-                } else {
-                    stringResource(R.string.screen_native_registration_subtitle, state.accountProvider.title)
+                title = when (state.step) {
+                    NativeRegistrationStep.Email -> stringResource(R.string.screen_native_registration_email_step_title)
+                    NativeRegistrationStep.Code -> stringResource(R.string.screen_native_registration_code_step_title)
+                    NativeRegistrationStep.Credentials -> stringResource(R.string.screen_native_registration_credentials_step_title)
+                },
+                subTitle = when (state.step) {
+                    NativeRegistrationStep.Email -> stringResource(R.string.screen_native_registration_email_step_subtitle)
+                    NativeRegistrationStep.Code -> stringResource(R.string.screen_native_registration_code_step_subtitle, state.formState.email)
+                    NativeRegistrationStep.Credentials -> stringResource(R.string.screen_native_registration_credentials_step_subtitle)
                 },
             )
+
             Spacer(Modifier.height(32.dp))
-            if (state.isAwaitingEmailVerification) {
-                Text(
-                    text = stringResource(R.string.screen_native_registration_email_verification_title, state.formState.email),
-                    style = ElementTheme.typography.fontBodyLgRegular,
-                    color = ElementTheme.colors.textPrimary,
+
+            when (state.step) {
+                NativeRegistrationStep.Email -> EmailStepContent(
+                    state = state,
+                    isLoading = isLoading,
+                    onSubmit = ::submit,
                 )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.screen_native_registration_email_verification_hint),
-                    style = ElementTheme.typography.fontBodyMdRegular,
-                    color = ElementTheme.colors.textSecondary,
+                NativeRegistrationStep.Code -> CodeStepContent(
+                    state = state,
+                    isLoading = isLoading,
+                    onSubmit = ::submit,
                 )
-            } else {
-                NativeRegistrationForm(
+                NativeRegistrationStep.Credentials -> CredentialsStepContent(
                     state = state,
                     isLoading = isLoading,
                     onSubmit = ::submit,
                 )
             }
+
             Spacer(Modifier.height(24.dp))
             Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                 ButtonColumnMolecule {
-                    if (state.isAwaitingEmailVerification) {
-                        Button(
-                            text = stringResource(R.string.screen_native_registration_action_continue_after_email),
-                            showProgress = isLoading,
-                            onClick = { state.eventSink(NativeRegistrationEvents.ConfirmEmailVerified) },
-                            enabled = !isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    Button(
+                        text = when (state.step) {
+                            NativeRegistrationStep.Email -> stringResource(CommonStrings.action_continue)
+                            NativeRegistrationStep.Code -> stringResource(CommonStrings.action_confirm)
+                            NativeRegistrationStep.Credentials -> stringResource(R.string.screen_native_registration_action_create_account)
+                        },
+                        showProgress = isLoading,
+                        onClick = ::submit,
+                        enabled = state.submitEnabled || isLoading,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (state.step == NativeRegistrationStep.Code) {
                         TextButton(
                             text = stringResource(R.string.screen_native_registration_action_resend_email),
                             onClick = { state.eventSink(NativeRegistrationEvents.ResendEmail) },
-                            enabled = !isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    } else {
-                        Button(
-                            text = stringResource(CommonStrings.action_continue),
-                            showProgress = isLoading,
-                            onClick = ::submit,
-                            enabled = state.submitEnabled || isLoading,
+                            enabled = !isLoading && state.canResendEmail,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -186,19 +195,112 @@ fun NativeRegistrationView(
 }
 
 @Composable
-private fun NativeRegistrationForm(
+private fun EmailStepContent(
+    state: NativeRegistrationState,
+    isLoading: Boolean,
+    onSubmit: () -> Unit,
+) {
+    var emailFieldState by textFieldState(stateValue = state.formState.email)
+    val focusManager = LocalFocusManager.current
+
+    Column {
+        Text(
+            text = stringResource(R.string.screen_native_registration_email_step_body),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
+        )
+        Spacer(Modifier.height(16.dp))
+        TextField(
+            label = stringResource(R.string.screen_native_registration_email_label),
+            value = emailFieldState,
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onTabOrEnterKeyFocusNext(focusManager)
+                .semantics { contentType = ContentType.EmailAddress },
+            placeholder = stringResource(R.string.screen_native_registration_email_label),
+            onValueChange = {
+                val sanitized = it.sanitize()
+                emailFieldState = sanitized
+                state.eventSink(NativeRegistrationEvents.SetEmail(sanitized))
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+            singleLine = true,
+        )
+    }
+}
+
+@Composable
+private fun CodeStepContent(
+    state: NativeRegistrationState,
+    isLoading: Boolean,
+    onSubmit: () -> Unit,
+) {
+    var verificationCodeFieldState by textFieldState(stateValue = state.formState.verificationCode)
+    val focusManager = LocalFocusManager.current
+
+    Column {
+        Text(
+            text = stringResource(R.string.screen_native_registration_code_step_body, state.formState.email),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textPrimary,
+        )
+        Spacer(Modifier.height(16.dp))
+            TextField(
+                label = stringResource(R.string.screen_login_verification_code_label),
+                value = verificationCodeFieldState,
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onTabOrEnterKeyFocusNext(focusManager)
+                    .semantics { contentType = ContentType.Password },
+            placeholder = stringResource(R.string.screen_login_verification_code_label),
+            onValueChange = {
+                val sanitized = it.sanitize()
+                verificationCodeFieldState = sanitized
+                state.eventSink(NativeRegistrationEvents.SetVerificationCode(sanitized))
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+            singleLine = true,
+            trailingIcon = if (verificationCodeFieldState.isNotEmpty()) {
+                {
+                    Box(Modifier.clickable {
+                        verificationCodeFieldState = ""
+                        state.eventSink(NativeRegistrationEvents.SetVerificationCode(""))
+                    }) {
+                        Icon(
+                            imageVector = CompoundIcons.Close(),
+                            contentDescription = stringResource(CommonStrings.action_clear),
+                            tint = ElementTheme.colors.iconSecondary,
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+        )
+    }
+}
+
+@Composable
+private fun CredentialsStepContent(
     state: NativeRegistrationState,
     isLoading: Boolean,
     onSubmit: () -> Unit,
 ) {
     var usernameFieldState by textFieldState(stateValue = state.formState.username)
-    var emailFieldState by textFieldState(stateValue = state.formState.email)
-    var tokenFieldState by textFieldState(stateValue = state.formState.registrationToken)
     var passwordFieldState by textFieldState(stateValue = state.formState.password)
-    var confirmPasswordFieldState by textFieldState(stateValue = state.formState.confirmPassword)
     val focusManager = LocalFocusManager.current
 
     Column {
+        Text(
+            text = stringResource(R.string.screen_native_registration_credentials_step_body),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
+        )
+        Spacer(Modifier.height(16.dp))
         TextField(
             label = stringResource(R.string.screen_native_registration_username_label),
             value = usernameFieldState,
@@ -218,38 +320,6 @@ private fun NativeRegistrationForm(
             singleLine = true,
         )
         Spacer(Modifier.height(16.dp))
-        TextField(
-            label = stringResource(R.string.screen_native_registration_email_label),
-            value = emailFieldState,
-            enabled = !isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onTabOrEnterKeyFocusNext(focusManager)
-                .semantics { contentType = ContentType.EmailAddress },
-            placeholder = stringResource(R.string.screen_native_registration_email_label),
-            onValueChange = {
-                val sanitized = it.sanitize()
-                emailFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetEmail(sanitized))
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-            singleLine = true,
-        )
-        Spacer(Modifier.height(16.dp))
-        PasswordField(
-            value = tokenFieldState,
-            label = stringResource(R.string.screen_native_registration_token_label),
-            enabled = !isLoading,
-            onValueChange = {
-                val sanitized = it.sanitize()
-                tokenFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetRegistrationToken(sanitized))
-            },
-            imeAction = ImeAction.Next,
-            onImeAction = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-        Spacer(Modifier.height(16.dp))
         PasswordField(
             value = passwordFieldState,
             label = stringResource(CommonStrings.common_password),
@@ -258,19 +328,6 @@ private fun NativeRegistrationForm(
                 val sanitized = it.sanitize()
                 passwordFieldState = sanitized
                 state.eventSink(NativeRegistrationEvents.SetPassword(sanitized))
-            },
-            imeAction = ImeAction.Next,
-            onImeAction = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-        Spacer(Modifier.height(16.dp))
-        PasswordField(
-            value = confirmPasswordFieldState,
-            label = stringResource(R.string.screen_native_registration_password_confirm_label),
-            enabled = !isLoading,
-            onValueChange = {
-                val sanitized = it.sanitize()
-                confirmPasswordFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetConfirmPassword(sanitized))
             },
             imeAction = ImeAction.Done,
             onImeAction = onSubmit,
@@ -300,8 +357,7 @@ private fun PasswordField(
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             val image = if (passwordVisible) CompoundIcons.VisibilityOn() else CompoundIcons.VisibilityOff()
-            val description =
-                if (passwordVisible) stringResource(CommonStrings.a11y_hide_password) else stringResource(CommonStrings.a11y_show_password)
+            val description = if (passwordVisible) stringResource(CommonStrings.a11y_hide_password) else stringResource(CommonStrings.a11y_show_password)
             Box(Modifier.clickable { passwordVisible = !passwordVisible }) {
                 Icon(
                     imageVector = image,
@@ -318,13 +374,15 @@ private fun PasswordField(
 private fun nativeRegistrationError(error: Throwable): Int {
     return when (error) {
         NativeAuthException.EmailRequired -> R.string.screen_native_registration_error_email_required
-        NativeAuthException.RegistrationTokenRequired -> R.string.screen_native_registration_error_token_required
+        NativeAuthException.EmailVerificationUnavailable -> R.string.screen_native_registration_error_email_verification_unavailable
         NativeRegistrationValidationException.PasswordMismatch -> R.string.screen_native_registration_error_password_mismatch
         NativeAuthException.InvalidUsername -> R.string.screen_native_registration_error_invalid_username
         NativeAuthException.UsernameInUse -> R.string.screen_native_registration_error_username_in_use
         NativeAuthException.InvalidEmail -> R.string.screen_native_registration_error_invalid_email
         NativeAuthException.EmailAlreadyInUse -> R.string.screen_native_registration_error_email_in_use
         NativeAuthException.InvalidRegistrationToken -> R.string.screen_native_registration_error_invalid_token
+        NativeAuthException.InvalidCredentials -> R.string.screen_login_error_invalid_credentials
+        NativeAuthException.InvalidVerificationCode -> R.string.screen_login_error_invalid_code
         is NativeAuthException.RateLimited -> R.string.screen_native_registration_error_rate_limited
         is NativeAuthException.UnsupportedAuthenticationFlow -> R.string.screen_native_registration_error_unsupported_flow
         else -> R.string.screen_native_registration_error_unknown

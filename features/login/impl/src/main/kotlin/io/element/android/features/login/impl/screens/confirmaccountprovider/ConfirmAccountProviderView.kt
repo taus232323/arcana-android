@@ -61,17 +61,16 @@ fun ConfirmAccountProviderView(
                 iconStyle = BigIcon.Style.Default(CompoundIcons.UserProfileSolid()),
                 title = stringResource(
                     id = if (state.isAccountCreation) {
-                        R.string.screen_account_provider_signup_title
+                        R.string.screen_account_provider_signup_title_arcana
                     } else {
-                        R.string.screen_account_provider_signin_title
+                        R.string.screen_account_provider_signin_title_arcana
                     },
-                    state.accountProvider.title
                 ),
                 subTitle = stringResource(
                     id = if (state.isAccountCreation) {
-                        R.string.screen_account_provider_signup_subtitle
+                        R.string.screen_account_provider_signup_subtitle_arcana
                     } else {
-                        R.string.screen_account_provider_signin_subtitle
+                        R.string.screen_account_provider_signin_subtitle_arcana
                     },
                 )
             )
