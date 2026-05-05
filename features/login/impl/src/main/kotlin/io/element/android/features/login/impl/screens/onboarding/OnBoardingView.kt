@@ -205,7 +205,7 @@ private fun OnBoardingContent(state: OnBoardingState) {
         ) {
             ArcanaLogo(
                 modifier = Modifier.padding(top = 8.dp),
-                containerSize = 170.dp,
+                containerSize = 214.dp,
                 logoSize = 158.dp,
             )
         }
