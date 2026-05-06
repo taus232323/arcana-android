@@ -17,7 +17,6 @@ import dev.zacsweers.metro.Inject
 import io.element.android.appconfig.AuthenticationConfig
 import io.element.android.features.login.impl.error.ChangeServerError
 import io.element.android.features.login.impl.screens.chooseaccountprovider.ChooseAccountProviderPresenter
-import io.element.android.features.login.impl.screens.confirmaccountprovider.ConfirmAccountProviderPresenter
 import io.element.android.features.login.impl.screens.onboarding.OnBoardingPresenter
 import io.element.android.features.login.impl.web.WebClientUrlForAuthenticationRetriever
 import io.element.android.libraries.architecture.AsyncData
@@ -30,8 +29,8 @@ import io.element.android.libraries.oidc.api.OidcActionFlow
 /**
  * This class is responsible for managing the login flow, including handling OIDC actions and
  * submitting login requests.
- * It's a helper to avoid code duplication. It is used by [OnBoardingPresenter], [ConfirmAccountProviderPresenter]
- * and [ChooseAccountProviderPresenter].
+ * It's a helper to avoid code duplication. It is used by [OnBoardingPresenter] and
+ * [ChooseAccountProviderPresenter].
  */
 @Inject
 class LoginHelper(

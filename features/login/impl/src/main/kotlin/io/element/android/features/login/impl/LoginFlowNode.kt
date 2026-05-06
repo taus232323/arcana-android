@@ -36,7 +36,6 @@ import io.element.android.features.login.impl.qrcode.QrCodeLoginFlowNode
 import io.element.android.features.login.impl.screens.changeaccountprovider.ChangeAccountProviderNode
 import io.element.android.features.login.impl.screens.chooseaccountprovider.ChooseAccountProviderNode
 import io.element.android.features.login.impl.screens.classic.ClassicFlowNode
-import io.element.android.features.login.impl.screens.confirmaccountprovider.ConfirmAccountProviderNode
 import io.element.android.features.login.impl.screens.createaccount.CreateAccountNode
 import io.element.android.features.login.impl.screens.loginpassword.LoginPasswordNode
 import io.element.android.features.login.impl.screens.nativeregistration.NativeRegistrationNode
@@ -125,11 +124,6 @@ class LoginFlowNode(
         data object AppDeveloperSettings : NavTarget
 
         @Parcelize
-        data class ConfirmAccountProvider(
-            val isAccountCreation: Boolean,
-        ) : NavTarget
-
-        @Parcelize
         data object ChooseAccountProvider : NavTarget
 
         @Parcelize
@@ -196,13 +190,7 @@ class LoginFlowNode(
                     }
 
                     override fun navigateToSignInFlow(mustChooseAccountProvider: Boolean) {
-                        backstack.push(
-                            if (mustChooseAccountProvider) {
-                                NavTarget.ChooseAccountProvider
-                            } else {
-                                NavTarget.ConfirmAccountProvider(isAccountCreation = false)
-                            }
-                        )
+                        backstack.push(NavTarget.ChooseAccountProvider)
                     }
 
                     override fun navigateToQrCode() {
@@ -289,41 +277,11 @@ class LoginFlowNode(
                 }
                 createNode<QrCodeLoginFlowNode>(buildContext, listOf(callback))
             }
-            is NavTarget.ConfirmAccountProvider -> {
-                val inputs = ConfirmAccountProviderNode.Inputs(
-                    isAccountCreation = navTarget.isAccountCreation,
-                )
-                val callback = object : ConfirmAccountProviderNode.Callback {
-                    override fun navigateToOidc(oidcDetails: OidcDetails) {
-                        navigateToMas(oidcDetails)
-                    }
-
-                    override fun navigateToCreateAccount(url: String) {
-                        backstack.push(NavTarget.CreateAccount(url))
-                    }
-
-                    override fun navigateToLoginPassword() {
-                        backstack.push(NavTarget.LoginPassword())
-                    }
-
-                    override fun navigateToNativeRegistration() {
-                        backstack.push(NavTarget.NativeRegistration)
-                    }
-
-                    override fun navigateToChangeAccountProvider() {
-                        backstack.push(NavTarget.ChangeAccountProvider)
-                    }
-                }
-                createNode<ConfirmAccountProviderNode>(buildContext, plugins = listOf(inputs, callback))
-            }
             NavTarget.ChangeAccountProvider -> {
                 val callback = object : ChangeAccountProviderNode.Callback {
                     override fun onDone() {
                         // Go back to the Account Provider screen
-                        val confirmAccountProvider = backstack.elements.value.firstOrNull {
-                            it.key.navTarget is NavTarget.ConfirmAccountProvider
-                        }?.key?.navTarget ?: NavTarget.ConfirmAccountProvider(isAccountCreation = false)
-                        backstack.singleTop(confirmAccountProvider)
+                        backstack.singleTop(NavTarget.ChooseAccountProvider)
                     }
 
                     override fun navigateToSearchAccountProvider() {
@@ -337,10 +295,7 @@ class LoginFlowNode(
                 val callback = object : SearchAccountProviderNode.Callback {
                     override fun onDone() {
                         // Go back to the Account Provider screen
-                        val confirmAccountProvider = backstack.elements.value.firstOrNull {
-                            it.key.navTarget is NavTarget.ConfirmAccountProvider
-                        }?.key?.navTarget ?: NavTarget.ConfirmAccountProvider(isAccountCreation = false)
-                        backstack.singleTop(confirmAccountProvider)
+                        backstack.singleTop(NavTarget.ChooseAccountProvider)
                     }
                 }
 
