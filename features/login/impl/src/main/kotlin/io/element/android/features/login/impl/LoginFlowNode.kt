@@ -187,10 +187,12 @@ class LoginFlowNode(
             }
             is NavTarget.OnBoarding -> {
                 val callback = object : OnBoardingNode.Callback {
-                    override fun navigateToSignUpFlow() {
-                        backstack.push(
-                            NavTarget.ConfirmAccountProvider(isAccountCreation = true)
-                        )
+                    override fun navigateToSignUpFlow(accountProvider: String?) {
+                        appCoroutineScope.launch {
+                            val targetAccountProvider = accountProvider ?: accountProviderDataSource.flow.value.url
+                            accountProviderDataSource.setUrl(targetAccountProvider)
+                            backstack.push(NavTarget.NativeRegistration)
+                        }
                     }
 
                     override fun navigateToSignInFlow(mustChooseAccountProvider: Boolean) {

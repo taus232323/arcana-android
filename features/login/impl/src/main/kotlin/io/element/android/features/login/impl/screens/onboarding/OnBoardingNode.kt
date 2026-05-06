@@ -35,7 +35,7 @@ class OnBoardingNode(
     plugins = plugins
 ) {
     interface Callback : Plugin {
-        fun navigateToSignUpFlow()
+        fun navigateToSignUpFlow(accountProvider: String?)
         fun navigateToSignInFlow(mustChooseAccountProvider: Boolean)
         fun navigateToQrCode()
         fun navigateToBugReport()

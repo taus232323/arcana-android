@@ -258,8 +258,8 @@ class DefaultMatrixNativeAuthService(
             sid = null,
             email = null,
         )
-        val response = api(baseUrl).requestEmailLoginToken(
-            EmailLoginRequestTokenRequest(
+        val response = api(baseUrl).requestEmailLoginVerification(
+            EmailLoginRequest(
                 clientSecret = pendingEmailLogin.clientSecret,
                 login = pendingEmailLogin.login,
                 password = pendingEmailLogin.password,
@@ -284,8 +284,8 @@ class DefaultMatrixNativeAuthService(
         pendingEmailLogin: PendingEmailLogin,
     ): Result<EmailLoginResult> = runCatchingExceptions {
         val next = pendingEmailLogin.withEmailSession()
-        val response = api(next.homeserverUrl).submitEmailLoginToken(
-            EmailLoginSubmitRequest(
+        val response = api(next.homeserverUrl).submitEmailLoginVerification(
+            EmailLoginConfirmationRequest(
                 clientSecret = next.clientSecret,
                 sid = requireNotNull(next.sid),
                 token = next.verificationCode,
@@ -311,8 +311,8 @@ class DefaultMatrixNativeAuthService(
         pendingEmailLogin: PendingEmailLogin,
     ): Result<PendingEmailLogin> = runCatchingExceptions {
         val updated = pendingEmailLogin.copy(sendAttempt = pendingEmailLogin.sendAttempt + 1)
-        val response = api(updated.homeserverUrl).requestEmailLoginToken(
-            EmailLoginRequestTokenRequest(
+        val response = api(updated.homeserverUrl).requestEmailLoginVerification(
+            EmailLoginRequest(
                 clientSecret = updated.clientSecret,
                 login = updated.login,
                 password = updated.password,

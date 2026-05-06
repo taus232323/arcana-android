@@ -40,14 +40,14 @@ internal interface MatrixNativeAuthAPI {
         @Body body: EmailRequestTokenRequest,
     ): Response<EmailRequestTokenResponse>
 
-    @POST("/_matrix/client/v3/login/email/requestToken")
-    suspend fun requestEmailLoginToken(
-        @Body body: EmailLoginRequestTokenRequest,
-    ): Response<EmailLoginRequestTokenResponse>
+    @POST("/_matrix/client/v3/login")
+    suspend fun requestEmailLoginVerification(
+        @Body body: EmailLoginRequest,
+    ): Response<EmailLoginStartResponse>
 
-    @POST("/_matrix/client/v3/login/email/submitToken")
-    suspend fun submitEmailLoginToken(
-        @Body body: EmailLoginSubmitRequest,
+    @POST("/_matrix/client/v3/login")
+    suspend fun submitEmailLoginVerification(
+        @Body body: EmailLoginConfirmationRequest,
     ): Response<LoginResponse>
 }
 
@@ -115,7 +115,7 @@ internal data class RegistrationEmailSubmitRequest(
 )
 
 @Serializable
-internal data class EmailLoginRequestTokenRequest(
+internal data class EmailLoginRequest(
     @SerialName("client_secret")
     val clientSecret: String,
     val login: String,
@@ -125,13 +125,13 @@ internal data class EmailLoginRequestTokenRequest(
 )
 
 @Serializable
-internal data class EmailLoginRequestTokenResponse(
+internal data class EmailLoginStartResponse(
     val sid: String,
     val email: String? = null,
 )
 
 @Serializable
-internal data class EmailLoginSubmitRequest(
+internal data class EmailLoginConfirmationRequest(
     @SerialName("client_secret")
     val clientSecret: String,
     val sid: String,

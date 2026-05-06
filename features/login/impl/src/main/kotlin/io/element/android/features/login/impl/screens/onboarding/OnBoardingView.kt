@@ -66,7 +66,7 @@ fun OnBoardingView(
     onDeveloperSettingsClick: () -> Unit,
     onSignInWithQrCode: () -> Unit,
     onSignIn: (mustChooseAccountProvider: Boolean) -> Unit,
-    onCreateAccount: () -> Unit,
+    onCreateAccount: (String?) -> Unit,
     onOidcDetails: (OidcDetails) -> Unit,
     onNeedLoginPassword: () -> Unit,
     onNeedNativeRegistration: () -> Unit = {},
@@ -261,7 +261,7 @@ private fun OnBoardingButtons(
     state: OnBoardingState,
     onSignInWithQrCode: () -> Unit,
     onSignIn: (mustChooseAccountProvider: Boolean) -> Unit,
-    onCreateAccount: () -> Unit,
+    onCreateAccount: (String?) -> Unit,
     onReportProblem: () -> Unit,
 ) {
     val isLoading by remember(state.loginMode) {
@@ -310,7 +310,7 @@ private fun OnBoardingButtons(
         if (state.canCreateAccount) {
             TextButton(
                 text = stringResource(id = R.string.screen_onboarding_sign_up),
-                onClick = onCreateAccount,
+                onClick = { onCreateAccount(state.defaultAccountProvider) },
                 modifier = Modifier
                     .fillMaxWidth()
             )
@@ -353,7 +353,7 @@ internal fun OnBoardingViewPreview(
         onDeveloperSettingsClick = {},
         onSignInWithQrCode = {},
         onSignIn = {},
-        onCreateAccount = {},
+        onCreateAccount = { _ -> },
         onReportProblem = {},
         onOidcDetails = {},
         onNeedLoginPassword = {},
