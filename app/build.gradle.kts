@@ -190,6 +190,7 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    sourceSets.getByName("main").res.srcDir(rootProject.file("arcana/android/res"))
     flavorDimensions += "store"
     productFlavors {
         create("gplay") {
@@ -252,10 +253,8 @@ dependencies {
     allServicesImpl()
     if (isEnterpriseBuild) {
         allEnterpriseImpl(project)
-        implementation(projects.appicon.enterprise)
     } else {
         implementation(projects.features.enterprise.implFoss)
-        implementation(projects.appicon.element)
     }
     allFeaturesImpl(project)
     implementation(projects.features.migration.api)

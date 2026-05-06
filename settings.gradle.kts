@@ -40,8 +40,6 @@ rootProject.name = "ElementX"
 include(":app")
 include(":appnav")
 include(":appconfig")
-include(":appicon:element")
-include(":appicon:enterprise")
 include(":tests:detekt-rules")
 include(":tests:konsist")
 include(":tests:uitests")

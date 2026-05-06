@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.login.impl.R
-import io.element.android.features.login.impl.components.ArcanaLogo
+import io.element.android.features.login.impl.components.ArcanaMark
 import io.element.android.features.login.impl.login.LoginModeView
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.atomic.molecules.ButtonColumnMolecule
@@ -203,10 +203,9 @@ private fun OnBoardingContent(state: OnBoardingState) {
                 verticalBias = -0.4f
             )
         ) {
-            ArcanaLogo(
+            ArcanaMark(
                 modifier = Modifier.padding(top = 8.dp),
-                containerSize = 214.dp,
-                logoSize = 158.dp,
+                size = 164.dp,
             )
         }
         Box(

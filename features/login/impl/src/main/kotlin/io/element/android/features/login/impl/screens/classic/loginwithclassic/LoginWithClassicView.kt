@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.login.impl.R
-import io.element.android.features.login.impl.components.ArcanaLogo
+import io.element.android.features.login.impl.components.ArcanaMark
 import io.element.android.features.login.impl.login.LoginModeView
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.atomic.molecules.ButtonColumnMolecule
@@ -81,10 +81,7 @@ fun LoginWithClassicView(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(40.dp))
-                ArcanaLogo(
-                    containerSize = 54.dp,
-                    logoSize = 40.dp,
-                )
+                ArcanaMark(size = 96.dp)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(id = R.string.screen_onboarding_welcome_title_arcana),
