@@ -253,7 +253,7 @@ class NativeRegistrationPresenter(
         registerAction.value = AsyncData.Loading()
         nativeAuthService.finishRegistration(
             pendingRegistration = currentPendingRegistration,
-            username = formState.value.username,
+            username = formState.value.username.trim().takeIf { it.isNotBlank() },
             password = formState.value.password,
         ).onSuccess { result ->
             when (result) {

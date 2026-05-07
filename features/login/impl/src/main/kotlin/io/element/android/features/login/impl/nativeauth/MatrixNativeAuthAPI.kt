@@ -60,7 +60,7 @@ internal data class RegisterRequest(
     val clientSecret: String,
     val sid: String,
     val password: String,
-    val username: String,
+    val username: String? = null,
     @SerialName("device_id")
     val deviceId: String? = null,
     @SerialName("initial_device_display_name")

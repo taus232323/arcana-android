@@ -4,7 +4,7 @@
     <string name="action_sign_in">Sign in</string>
     <string name="screen_login_login_label">Login or email</string>
     <string name="screen_native_registration_title">Create account</string>
-    <string name="screen_native_registration_subtitle">Create a new account on %1$s using a registration token and email verification.</string>
+    <string name="screen_native_registration_subtitle">Create a new account on %1$s using email verification.</string>
     <string name="screen_native_registration_username_label">Username (optional)</string>
     <string name="screen_native_registration_email_label">Email</string>
     <string name="screen_native_registration_token_label">Registration token (optional)</string>
@@ -57,7 +57,7 @@
     <string name="screen_native_registration_code_step_subtitle">We sent a code to %1$s. Enter it here to continue.</string>
     <string name="screen_native_registration_code_step_body">Enter the code we sent to %1$s.</string>
     <string name="screen_native_registration_credentials_step_title">Set up your account</string>
-    <string name="screen_native_registration_credentials_step_subtitle">Choose a username and password for Arcana.</string>
+    <string name="screen_native_registration_credentials_step_subtitle">Choose a username if you want one, then set a password for Arcana.</string>
     <string name="screen_native_registration_credentials_step_body">Now choose your username and password.</string>
     <string name="screen_native_registration_action_create_account">Create account</string>
     <string name="screen_native_registration_error_email_verification_unavailable">This email address cannot be used for login verification.</string>

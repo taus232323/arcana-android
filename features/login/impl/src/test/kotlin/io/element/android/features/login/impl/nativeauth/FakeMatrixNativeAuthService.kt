@@ -13,7 +13,7 @@ import io.element.android.tests.testutils.simulateLongTask
 class FakeMatrixNativeAuthService(
     var startRegistrationResult: (String, String) -> Result<RegistrationResult> = { _, _ -> lambdaError() },
     var submitRegistrationEmailCodeResult: (PendingRegistration, String) -> Result<RegistrationResult> = { _, _ -> lambdaError() },
-    var finishRegistrationResult: (PendingRegistration, String, String) -> Result<RegistrationResult> = { _, _, _ -> lambdaError() },
+    var finishRegistrationResult: (PendingRegistration, String?, String) -> Result<RegistrationResult> = { _, _, _ -> lambdaError() },
     var resendRegistrationEmailResult: (PendingRegistration) -> Result<PendingRegistration> = { _ -> lambdaError() },
     var startEmailLoginResult: (String, String, String) -> Result<EmailLoginResult> = { _, _, _ -> lambdaError() },
     var continueEmailLoginResult: (PendingEmailLogin) -> Result<EmailLoginResult> = { _ -> lambdaError() },
@@ -35,7 +35,7 @@ class FakeMatrixNativeAuthService(
 
     override suspend fun finishRegistration(
         pendingRegistration: PendingRegistration,
-        username: String,
+        username: String?,
         password: String,
     ): Result<RegistrationResult> = simulateLongTask {
         finishRegistrationResult(pendingRegistration, username, password)

@@ -33,9 +33,15 @@ interface MatrixNativeAuthService {
         verificationCode: String,
     ): Result<RegistrationResult>
 
+    /**
+     * Completes the email-first registration flow.
+     *
+     * First-run bootstrap with `m.login.registration_token` is intentionally not surfaced in this UX.
+     * If the homeserver requires that path, use the raw `/register` API fallback for the initial admin.
+     */
     suspend fun finishRegistration(
         pendingRegistration: PendingRegistration,
-        username: String,
+        username: String?,
         password: String,
     ): Result<RegistrationResult>
 
@@ -135,7 +141,7 @@ class DefaultMatrixNativeAuthService(
 
     override suspend fun finishRegistration(
         pendingRegistration: PendingRegistration,
-        username: String,
+        username: String?,
         password: String,
     ): Result<RegistrationResult> = runCatchingExceptions {
         val response = api(pendingRegistration.homeserverUrl).register(
@@ -144,7 +150,7 @@ class DefaultMatrixNativeAuthService(
                 clientSecret = pendingRegistration.clientSecret,
                 sid = requireNotNull(pendingRegistration.sid),
                 password = password,
-                username = username.trim(),
+                username = username?.trim()?.takeIf { it.isNotBlank() },
                 initialDeviceDisplayName = INITIAL_DEVICE_DISPLAY_NAME,
             )
         )
@@ -453,6 +459,8 @@ class DefaultMatrixNativeAuthService(
             "M_THREEPID_DENIED" -> NativeAuthException.InvalidEmail
             "M_INVALID_CREDENTIALS" -> NativeAuthException.InvalidCredentials
             "M_INVALID_TOKEN" -> NativeAuthException.InvalidVerificationCode
+            "M_INVALID_REGISTRATION_TOKEN" -> NativeAuthException.InvalidRegistrationToken
+            "M_REGISTRATION_TOKEN_INVALID" -> NativeAuthException.InvalidRegistrationToken
             "M_EMAIL_LOGIN_CODE_EXPIRED" -> NativeAuthException.InvalidVerificationCode
             "M_NOT_FOUND" -> NativeAuthException.EmailVerificationUnavailable
             "M_LIMIT_EXCEEDED" -> {

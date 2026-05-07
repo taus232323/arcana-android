@@ -28,7 +28,7 @@ data class NativeRegistrationState(
             when (step) {
                 NativeRegistrationStep.Email -> formState.email.isNotBlank()
                 NativeRegistrationStep.Code -> formState.verificationCode.isNotBlank()
-                NativeRegistrationStep.Credentials -> formState.username.isNotBlank() && formState.password.isNotBlank()
+                NativeRegistrationStep.Credentials -> formState.password.isNotBlank()
             }
 
     val isAwaitingEmailVerification: Boolean

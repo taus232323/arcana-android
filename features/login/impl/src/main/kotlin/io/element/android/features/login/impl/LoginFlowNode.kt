@@ -33,7 +33,6 @@ import io.element.android.features.login.api.LoginEntryPoint
 import io.element.android.features.login.impl.accountprovider.AccountProviderDataSource
 import io.element.android.features.login.impl.classic.ElementClassicConnection
 import io.element.android.features.login.impl.qrcode.QrCodeLoginFlowNode
-import io.element.android.features.login.impl.screens.changeaccountprovider.ChangeAccountProviderNode
 import io.element.android.features.login.impl.screens.chooseaccountprovider.ChooseAccountProviderNode
 import io.element.android.features.login.impl.screens.classic.ClassicFlowNode
 import io.element.android.features.login.impl.screens.createaccount.CreateAccountNode
@@ -41,7 +40,6 @@ import io.element.android.features.login.impl.screens.loginpassword.LoginPasswor
 import io.element.android.features.login.impl.screens.nativeregistration.NativeRegistrationNode
 import io.element.android.features.login.impl.screens.onboarding.OnBoardingNode
 import io.element.android.features.login.impl.screens.passwordreset.PasswordResetNode
-import io.element.android.features.login.impl.screens.searchaccountprovider.SearchAccountProviderNode
 import io.element.android.features.preferences.api.PreferencesEntryPoint
 import io.element.android.libraries.androidutils.browser.openUrlInChromeCustomTab
 import io.element.android.libraries.architecture.BackstackView
@@ -125,12 +123,6 @@ class LoginFlowNode(
 
         @Parcelize
         data object ChooseAccountProvider : NavTarget
-
-        @Parcelize
-        data object ChangeAccountProvider : NavTarget
-
-        @Parcelize
-        data object SearchAccountProvider : NavTarget
 
         @Parcelize
         data class LoginPassword(
@@ -276,30 +268,6 @@ class LoginFlowNode(
                     }
                 }
                 createNode<QrCodeLoginFlowNode>(buildContext, listOf(callback))
-            }
-            NavTarget.ChangeAccountProvider -> {
-                val callback = object : ChangeAccountProviderNode.Callback {
-                    override fun onDone() {
-                        // Go back to the Account Provider screen
-                        backstack.singleTop(NavTarget.ChooseAccountProvider)
-                    }
-
-                    override fun navigateToSearchAccountProvider() {
-                        backstack.push(NavTarget.SearchAccountProvider)
-                    }
-                }
-
-                createNode<ChangeAccountProviderNode>(buildContext, plugins = listOf(callback))
-            }
-            NavTarget.SearchAccountProvider -> {
-                val callback = object : SearchAccountProviderNode.Callback {
-                    override fun onDone() {
-                        // Go back to the Account Provider screen
-                        backstack.singleTop(NavTarget.ChooseAccountProvider)
-                    }
-                }
-
-                createNode<SearchAccountProviderNode>(buildContext, plugins = listOf(callback))
             }
             is NavTarget.LoginPassword -> {
                 val inputs = LoginPasswordNode.Inputs(

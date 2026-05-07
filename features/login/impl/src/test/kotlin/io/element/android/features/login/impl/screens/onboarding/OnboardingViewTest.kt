@@ -92,8 +92,8 @@ class OnboardingViewTest {
     @Test
     fun `when can login with QR code - clicking on sign in manually calls the expected callback`(
         @TestParameter mustChooseAccountProvider: Boolean = namedTestValues(
-            "can search account provider" to false,
-            "cannot search account provider" to true,
+            "provider selection available" to false,
+            "provider selection required" to true,
         )
     ) {
         val eventSink = EventsRecorder<OnBoardingEvents>(expectEvents = false)
@@ -113,8 +113,8 @@ class OnboardingViewTest {
     @Test
     fun `when cannot login with QR code or create account - clicking on continue calls the sign in callback`(
         @TestParameter mustChooseAccountProvider: Boolean = namedTestValues(
-            "can search account provider" to false,
-            "cannot search account provider" to true,
+            "provider selection available" to false,
+            "provider selection required" to true,
         )
     ) {
         val eventSink = EventsRecorder<OnBoardingEvents>(expectEvents = false)
