@@ -95,7 +95,7 @@ fun UnresolvedUserRow(
 internal fun UnresolvedUserRowPreview() = ElementThemedPreview {
     val matrixUser = aMatrixUser()
     Column {
-        UnresolvedUserRow(matrixUser.getAvatarData(size = AvatarSize.UserListItem), matrixUser.userId.value)
-        UnresolvedUserRow(matrixUser.getAvatarData(size = AvatarSize.UserListItem), matrixUser.userId.value, enabled = false)
+        UnresolvedUserRow(matrixUser.getAvatarData(size = AvatarSize.UserListItem), matrixUser.userId.extractedDisplayName)
+        UnresolvedUserRow(matrixUser.getAvatarData(size = AvatarSize.UserListItem), matrixUser.userId.extractedDisplayName, enabled = false)
     }
 }

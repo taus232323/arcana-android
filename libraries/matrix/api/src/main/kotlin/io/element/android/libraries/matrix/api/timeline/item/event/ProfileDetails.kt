@@ -37,11 +37,11 @@ sealed interface ProfileDetails {
 fun ProfileDetails.getDisambiguatedDisplayName(userId: UserId): String {
     return when (this) {
         is ProfileDetails.Ready -> when {
-            displayName == null -> userId.value
-            displayNameAmbiguous -> "$displayName ($userId)"
+            displayName == null -> userId.extractedDisplayName
+            displayNameAmbiguous -> "$displayName (${userId.extractedDisplayName})"
             else -> displayName
         }
-        else -> userId.value
+        else -> userId.extractedDisplayName
     }
 }
 

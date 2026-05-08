@@ -91,6 +91,6 @@ private fun RoomMember.toTypingRoomMember(): TypingRoomMember {
 
 private fun createDefaultRoomMemberForTyping(userId: UserId): TypingRoomMember {
     return TypingRoomMember(
-        disambiguatedDisplayName = userId.value,
+        disambiguatedDisplayName = userId.extractedDisplayName,
     )
 }

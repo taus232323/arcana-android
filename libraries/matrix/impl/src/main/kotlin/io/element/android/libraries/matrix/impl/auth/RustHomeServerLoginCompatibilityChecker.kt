@@ -10,6 +10,7 @@ package io.element.android.libraries.matrix.impl.auth
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
+import io.element.android.appconfig.AuthenticationConfig
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.matrix.api.auth.HomeServerLoginCompatibilityChecker
 import io.element.android.libraries.matrix.impl.ClientBuilderProvider
@@ -32,7 +33,9 @@ class RustHomeServerLoginCompatibilityChecker(
             }
             .use {
                 Timber.d("Homeserver $url | OIDC: ${it.supportsOidcLogin()} | Password: ${it.supportsPasswordLogin()} | SSO: ${it.supportsSsoLogin()}")
-                it.supportsOidcLogin() || it.supportsPasswordLogin()
+                it.supportsOidcLogin() ||
+                    it.supportsPasswordLogin() ||
+                    url == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL
             }
     }
 }

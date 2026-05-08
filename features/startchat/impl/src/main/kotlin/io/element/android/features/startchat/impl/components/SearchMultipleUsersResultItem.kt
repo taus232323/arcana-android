@@ -32,12 +32,12 @@ fun SearchMultipleUsersResultItem(
     val data = if (searchResult.isUnresolved) {
         CheckableUserRowData.Unresolved(
             avatarData = searchResult.matrixUser.getAvatarData(AvatarSize.UserListItem),
-            id = searchResult.matrixUser.userId.value,
+            id = searchResult.matrixUser.userId.extractedDisplayName,
         )
     } else {
         CheckableUserRowData.Resolved(
             name = searchResult.matrixUser.getBestName(),
-            subtext = if (searchResult.matrixUser.displayName.isNullOrEmpty()) null else searchResult.matrixUser.userId.value,
+            subtext = if (searchResult.matrixUser.displayName.isNullOrEmpty()) null else searchResult.matrixUser.userId.extractedDisplayName,
             avatarData = searchResult.matrixUser.getAvatarData(AvatarSize.UserListItem),
         )
     }

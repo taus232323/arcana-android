@@ -62,10 +62,10 @@ fun SuggestionsPickerView(
             suggestions,
             key = { suggestion ->
                 when (suggestion) {
-                    is ResolvedSuggestion.AtRoom -> "@room"
-                    is ResolvedSuggestion.Member -> suggestion.roomMember.userId.value
-                    is ResolvedSuggestion.Alias -> suggestion.roomId.value
-                    is ResolvedSuggestion.Command -> suggestion.command.command
+            is ResolvedSuggestion.AtRoom -> "@room"
+            is ResolvedSuggestion.Member -> suggestion.roomMember.userId.value
+            is ResolvedSuggestion.Alias -> suggestion.roomId.value
+            is ResolvedSuggestion.Command -> suggestion.command.command
                 }
             }
         ) {
@@ -125,7 +125,7 @@ private fun SuggestionItemView(
         }
         val subtitle = when (suggestion) {
             is ResolvedSuggestion.AtRoom -> "@room"
-            is ResolvedSuggestion.Member -> suggestion.roomMember.userId.value
+            is ResolvedSuggestion.Member -> suggestion.roomMember.userId.extractedDisplayName
             is ResolvedSuggestion.Alias -> suggestion.roomAlias.value
             is ResolvedSuggestion.Command -> suggestion.command.description
         }

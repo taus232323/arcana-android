@@ -145,7 +145,7 @@ private fun InvitePeopleContentView(
                             data = CheckableUserRowData.Resolved(
                                 avatarData = invitableUser.matrixUser.getAvatarData(AvatarSize.UserListItem),
                                 name = invitableUser.matrixUser.getBestName(),
-                                subtext = invitableUser.matrixUser.userId.value,
+                                subtext = invitableUser.matrixUser.userId.extractedDisplayName,
                             ),
                         )
                         if (index < state.suggestions.lastIndex) {
@@ -221,7 +221,7 @@ private fun InvitePeopleSearchBar(
                     val data = if (isUnresolved) {
                         CheckableUserRowData.Unresolved(
                             avatarData = invitableUser.matrixUser.getAvatarData(AvatarSize.UserListItem),
-                            id = invitableUser.matrixUser.userId.value,
+                            id = invitableUser.matrixUser.userId.extractedDisplayName,
                         )
                     } else {
                         CheckableUserRowData.Resolved(
@@ -233,7 +233,7 @@ private fun InvitePeopleSearchBar(
                                 invitableUser.isAlreadyInvited -> stringResource(R.string.screen_invite_users_already_invited)
                                 // Otherwise show the ID, unless that's already used for their name
                                 invitableUser.matrixUser.displayName.isNullOrEmpty()
-                                    .not() -> invitableUser.matrixUser.userId.value
+                                    .not() -> invitableUser.matrixUser.userId.extractedDisplayName
                                 else -> null
                             }
                         )

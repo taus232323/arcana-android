@@ -69,7 +69,7 @@ fun MatrixUserHeader(
             // Id
             if (matrixUser.displayName.isNullOrEmpty().not()) {
                 Text(
-                    text = matrixUser.userId.value,
+                    text = matrixUser.userId.extractedDisplayName,
                     style = ElementTheme.typography.fontBodyMdRegular,
                     color = ElementTheme.colors.textSecondary,
                     maxLines = 1,

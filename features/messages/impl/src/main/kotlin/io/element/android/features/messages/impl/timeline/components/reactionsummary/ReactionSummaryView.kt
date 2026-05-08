@@ -149,8 +149,8 @@ private fun ReactionSummaryViewContent(
                     val user = sender.user ?: MatrixUser(userId = sender.senderId)
                     SenderRow(
                         avatarData = user.getAvatarData(AvatarSize.UserListItem),
-                        name = user.displayName ?: user.userId.value,
-                        userId = user.userId.value,
+                        name = user.displayName ?: user.userId.extractedDisplayName,
+                        userId = user.userId.extractedDisplayName,
                         sentTime = sender.sentTime
                     )
                 }

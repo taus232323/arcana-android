@@ -403,7 +403,7 @@ class DefaultNotificationCreator(
         val userId = notificationAccountParams.user.userId
         val text = stringProvider.getString(R.string.notification_error_unified_push_unregistered_android)
         return NotificationCompat.Builder(context, notificationChannels.getChannelIdForTest())
-            .setSubText(userId.value)
+            .setSubText(userId.extractedDisplayName)
             // The text is long and can be truncated so use BigTextStyle.
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentTitle(stringProvider.getString(CommonStrings.dialog_title_warning))
@@ -537,7 +537,7 @@ private fun NotificationCompat.Builder.configureWith(notificationAccountParams: 
     setColor(notificationAccountParams.color)
     setGroup(notificationAccountParams.user.userId.value)
     if (notificationAccountParams.showSessionId) {
-        setSubText(notificationAccountParams.user.userId.value)
+        setSubText(notificationAccountParams.user.userId.extractedDisplayName)
     }
 }
 

@@ -102,7 +102,7 @@ fun UserListView(
                             data = CheckableUserRowData.Resolved(
                                 avatarData = recentDirectRoom.matrixUser.getAvatarData(AvatarSize.UserListItem),
                                 name = recentDirectRoom.matrixUser.getBestName(),
-                                subtext = recentDirectRoom.matrixUser.userId.value,
+                                subtext = recentDirectRoom.matrixUser.userId.extractedDisplayName,
                             ),
                         )
                         if (index < state.recentDirectRooms.lastIndex) {

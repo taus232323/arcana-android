@@ -23,16 +23,16 @@ fun MatrixUser.getAvatarData(size: AvatarSize) = AvatarData(
 )
 
 fun MatrixUser.getBestName(): String {
-    return displayName?.takeIf { it.isNotEmpty() } ?: userId.value
+    return displayName?.takeIf { it.isNotEmpty() } ?: userId.extractedDisplayName
 }
 
 @Composable
 fun MatrixUser.getFullName(): String {
     return displayName.let { name ->
         if (name.isNullOrBlank()) {
-            userId.value
+            userId.extractedDisplayName
         } else {
-            stringResource(CommonStrings.common_name_and_id, name, userId.value)
+            stringResource(CommonStrings.common_name_and_id, name, userId.extractedDisplayName)
         }
     }
 }

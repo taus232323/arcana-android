@@ -81,7 +81,9 @@ class LoginHelper(
                     LoginMode.Oidc(
                         authenticationService.getOidcUrl(prompt = oidcPrompt, loginHint = loginHint).getOrThrow()
                     )
-                } else if (matrixHomeServerDetails.supportsPasswordLogin) {
+                } else if (matrixHomeServerDetails.supportsPasswordLogin ||
+                    homeserverUrl == AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL
+                ) {
                     LoginMode.PasswordLogin
                 } else {
                     error("Unsupported login flow")

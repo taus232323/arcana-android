@@ -16,6 +16,7 @@ import io.element.android.features.enterprise.test.FakeEnterpriseService
 import io.element.android.features.login.impl.accesscontrol.DefaultAccountProviderAccessControl
 import io.element.android.features.login.impl.accountprovider.AccountProviderDataSource
 import io.element.android.features.login.impl.login.LoginHelper
+import io.element.android.features.login.impl.login.LoginMode
 import io.element.android.features.login.impl.web.FakeWebClientUrlForAuthenticationRetriever
 import io.element.android.features.login.impl.web.WebClientUrlForAuthenticationRetriever
 import io.element.android.features.wellknown.test.FakeWellknownRetriever
@@ -30,6 +31,7 @@ import io.element.android.libraries.matrix.test.A_HOMESERVER_URL
 import io.element.android.libraries.matrix.test.A_HOMESERVER_URL_2
 import io.element.android.libraries.matrix.test.A_LOGIN_HINT
 import io.element.android.libraries.matrix.test.auth.FakeMatrixAuthenticationService
+import io.element.android.libraries.matrix.test.auth.aMatrixHomeServerDetails
 import io.element.android.libraries.matrix.test.core.aBuildMeta
 import io.element.android.libraries.oidc.api.OidcActionFlow
 import io.element.android.libraries.oidc.test.customtab.FakeOidcActionFlow
@@ -278,6 +280,37 @@ class OnBoardingPresenterTest {
                 val clearedState = awaitItem()
                 assertThat(clearedState.loginMode).isEqualTo(AsyncData.Uninitialized)
             }
+        }
+    }
+
+    @Test
+    fun `present - default account provider without advertised password login still continues with password login`() = runTest {
+        val authenticationService = FakeMatrixAuthenticationService(
+            setHomeserverResult = {
+                Result.success(aMatrixHomeServerDetails())
+            },
+        )
+        val presenter = createPresenter(
+            params = OnBoardingNode.Params(
+                accountProvider = AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL,
+                loginHint = null,
+                showBackButton = false,
+            ),
+            enterpriseService = FakeEnterpriseService(
+                isAllowedToConnectToHomeserverResult = { true },
+            ),
+            loginHelper = createLoginHelper(
+                authenticationService = authenticationService,
+            ),
+        )
+        presenter.test {
+            skipItems(3)
+            awaitItem().also { state ->
+                state.eventSink(OnBoardingEvents.OnSignIn(AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL))
+            }
+            skipItems(1) // Loading
+            val submittedState = awaitItem()
+            assertThat(submittedState.loginMode.dataOrNull()).isEqualTo(LoginMode.PasswordLogin)
         }
     }
 }

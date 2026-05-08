@@ -67,8 +67,8 @@ data class RoomMember(
      * Otherwise, the display name is returned.
      */
     val disambiguatedDisplayName: String = when {
-        displayName == null -> userId.value
-        isNameAmbiguous -> "$displayName ($userId)"
+        displayName == null -> userId.extractedDisplayName
+        isNameAmbiguous -> "$displayName (${userId.extractedDisplayName})"
         else -> displayName
     }
 
@@ -94,7 +94,7 @@ enum class RoomMembershipState {
  * If the [RoomMember.displayName] is present and not empty it'll be used, otherwise the [RoomMember.userId] will be used.
  */
 fun RoomMember.getBestName(): String {
-    return displayName?.takeIf { it.isNotEmpty() } ?: userId.value
+    return displayName?.takeIf { it.isNotEmpty() } ?: userId.extractedDisplayName
 }
 
 fun RoomMember.toMatrixUser() = MatrixUser(

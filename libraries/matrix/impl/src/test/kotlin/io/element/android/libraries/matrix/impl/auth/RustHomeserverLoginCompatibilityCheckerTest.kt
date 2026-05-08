@@ -9,6 +9,7 @@
 package io.element.android.libraries.matrix.impl.auth
 
 import com.google.common.truth.Truth.assertThat
+import io.element.android.appconfig.AuthenticationConfig
 import io.element.android.libraries.matrix.impl.FakeClientBuilderProvider
 import io.element.android.libraries.matrix.impl.fixtures.fakes.FakeFfiClient
 import io.element.android.libraries.matrix.impl.fixtures.fakes.FakeFfiClientBuilder
@@ -33,6 +34,12 @@ class RustHomeserverLoginCompatibilityCheckerTest {
     fun `check - is not valid if it only supports SSO login`() = runTest {
         val sut = createChecker { FakeFfiHomeserverLoginDetails(supportsSsoLogin = true) }
         assertThat(sut.check("https://matrix.host.org").getOrNull()).isFalse()
+    }
+
+    @Test
+    fun `check - is valid for the default account provider even if password login is not advertised`() = runTest {
+        val sut = createChecker { FakeFfiHomeserverLoginDetails() }
+        assertThat(sut.check(AuthenticationConfig.DEFAULT_ACCOUNT_PROVIDER_URL).getOrNull()).isTrue()
     }
 
     @Test
