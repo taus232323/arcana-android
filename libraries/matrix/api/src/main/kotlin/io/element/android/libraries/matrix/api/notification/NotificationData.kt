@@ -40,8 +40,8 @@ data class NotificationData(
     val roomJoinRule: JoinRule?,
 ) {
     fun getDisambiguatedDisplayName(userId: UserId): String = when {
-        senderDisplayName.isNullOrBlank() -> userId.value
-        senderIsNameAmbiguous -> "$senderDisplayName ($userId)"
+        senderDisplayName.isNullOrBlank() -> userId.displayNameWithAt
+        senderIsNameAmbiguous -> "$senderDisplayName (${userId.displayNameWithAt})"
         else -> senderDisplayName
     }
 }

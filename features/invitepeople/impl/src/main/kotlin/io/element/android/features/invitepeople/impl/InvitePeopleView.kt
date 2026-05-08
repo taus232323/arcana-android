@@ -145,7 +145,7 @@ private fun InvitePeopleContentView(
                             data = CheckableUserRowData.Resolved(
                                 avatarData = invitableUser.matrixUser.getAvatarData(AvatarSize.UserListItem),
                                 name = invitableUser.matrixUser.getBestName(),
-                                subtext = invitableUser.matrixUser.userId.extractedDisplayName,
+                                subtext = invitableUser.matrixUser.userId.displayNameWithAt,
                             ),
                         )
                         if (index < state.suggestions.lastIndex) {
@@ -218,12 +218,12 @@ private fun InvitePeopleSearchBar(
                     val invitedOrJoined = invitableUser.isAlreadyInvited || invitableUser.isAlreadyJoined
                     val isUnresolved = invitableUser.isUnresolved && !invitedOrJoined
                     val enabled = isUnresolved || !invitedOrJoined
-                    val data = if (isUnresolved) {
-                        CheckableUserRowData.Unresolved(
-                            avatarData = invitableUser.matrixUser.getAvatarData(AvatarSize.UserListItem),
-                            id = invitableUser.matrixUser.userId.extractedDisplayName,
-                        )
-                    } else {
+                        val data = if (isUnresolved) {
+                            CheckableUserRowData.Unresolved(
+                                avatarData = invitableUser.matrixUser.getAvatarData(AvatarSize.UserListItem),
+                                id = invitableUser.matrixUser.userId.displayNameWithAt,
+                            )
+                        } else {
                         CheckableUserRowData.Resolved(
                             avatarData = invitableUser.matrixUser.getAvatarData(AvatarSize.UserListItem),
                             name = invitableUser.matrixUser.getBestName(),
@@ -233,7 +233,7 @@ private fun InvitePeopleSearchBar(
                                 invitableUser.isAlreadyInvited -> stringResource(R.string.screen_invite_users_already_invited)
                                 // Otherwise show the ID, unless that's already used for their name
                                 invitableUser.matrixUser.displayName.isNullOrEmpty()
-                                    .not() -> invitableUser.matrixUser.userId.extractedDisplayName
+                                    .not() -> invitableUser.matrixUser.userId.displayNameWithAt
                                 else -> null
                             }
                         )

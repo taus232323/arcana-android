@@ -129,7 +129,7 @@ fun LoginWithClassicView(
                 }
                 // UserId
                 Text(
-                    text = state.userId.extractedDisplayName,
+                    text = state.userId.displayNameWithAt,
                     style = if (state.displayName == null) ElementTheme.typography.fontHeadingLgBold else ElementTheme.typography.fontBodyLgRegular,
                     color = ElementTheme.colors.textPrimary,
                     textAlign = TextAlign.Center,

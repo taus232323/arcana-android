@@ -125,7 +125,7 @@ private fun SuggestionItemView(
         }
         val subtitle = when (suggestion) {
             is ResolvedSuggestion.AtRoom -> "@room"
-            is ResolvedSuggestion.Member -> suggestion.roomMember.userId.extractedDisplayName
+            is ResolvedSuggestion.Member -> suggestion.roomMember.userId.displayNameWithAt
             is ResolvedSuggestion.Alias -> suggestion.roomAlias.value
             is ResolvedSuggestion.Command -> suggestion.command.description
         }

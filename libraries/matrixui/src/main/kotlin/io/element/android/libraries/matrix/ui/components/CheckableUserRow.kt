@@ -94,7 +94,7 @@ internal fun CheckableResolvedUserRowPreview() = ElementThemedPreview {
     val data = CheckableUserRowData.Resolved(
         avatarData = matrixUser.getAvatarData(AvatarSize.UserListItem),
         name = matrixUser.displayName.orEmpty(),
-        subtext = matrixUser.userId.extractedDisplayName,
+        subtext = matrixUser.userId.displayNameWithAt,
     )
     Column {
         CheckableUserRow(
@@ -131,7 +131,7 @@ internal fun CheckableUnresolvedUserRowPreview() = ElementThemedPreview {
     val matrixUser = aMatrixUser()
     val data = CheckableUserRowData.Unresolved(
         avatarData = matrixUser.getAvatarData(AvatarSize.UserListItem),
-        id = matrixUser.userId.extractedDisplayName,
+        id = matrixUser.userId.displayNameWithAt,
     )
     Column {
         CheckableUserRow(

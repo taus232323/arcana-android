@@ -456,7 +456,7 @@ private fun DmHeaderSection(
         )
         TitleAndSubtitle(
             title = roomName,
-            subtitle = otherMember.userId.extractedDisplayName,
+            subtitle = otherMember.userId.displayNameWithAt,
             onSubtitleClick = onSubtitleClick,
         )
     }

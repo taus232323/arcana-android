@@ -60,7 +60,7 @@ class DefaultFtueService(
     init {
         combine(
             sessionVerificationService.sessionVerifiedStatus.onEach { sessionVerifiedStatus ->
-                if (sessionVerifiedStatus == SessionVerifiedStatus.NotVerified) {
+                if (sessionVerifiedStatus == SessionVerifiedStatus.NotVerified && !canSkipVerification()) {
                     // Ensure we wait for the user to confirm the session verified screen before going further
                     userNeedsToConfirmSessionVerificationSuccess.value = true
                 }
@@ -115,12 +115,14 @@ class DefaultFtueService(
         return sessionVerificationService.sessionVerifiedStatus.value != SessionVerifiedStatus.Unknown
     }
 
-    private suspend fun isSessionNotVerified(): Boolean {
+    private fun isSessionNotVerified(): Boolean {
         return sessionVerificationService.sessionVerifiedStatus.value == SessionVerifiedStatus.NotVerified && !canSkipVerification()
     }
 
-    private suspend fun canSkipVerification(): Boolean {
-        return sessionPreferencesStore.isSessionVerificationSkipped().first()
+    private fun canSkipVerification(): Boolean {
+        // Arcana skips the FTUE identity confirmation screen by default.
+        // The underlying verification flows still exist in settings when needed.
+        return true
     }
 
     private suspend fun needsAnalyticsOptIn(): Boolean {

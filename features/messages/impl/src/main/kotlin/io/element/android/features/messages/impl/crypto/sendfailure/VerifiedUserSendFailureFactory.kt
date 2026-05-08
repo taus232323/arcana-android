@@ -28,7 +28,7 @@ class VerifiedUserSendFailureFactory(
                     if (userId == room.sessionId) {
                         VerifiedUserSendFailure.UnsignedDevice.FromYou
                     } else {
-                        val displayName = room.userDisplayName(userId).getOrNull() ?: userId.extractedDisplayName
+                        val displayName = room.userDisplayName(userId).getOrNull() ?: userId.displayNameWithAt
                         VerifiedUserSendFailure.UnsignedDevice.FromOther(displayName)
                     }
                 }
@@ -38,7 +38,7 @@ class VerifiedUserSendFailureFactory(
                 if (userId == null) {
                     VerifiedUserSendFailure.None
                 } else {
-                    val displayName = room.userDisplayName(userId).getOrNull() ?: userId.extractedDisplayName
+                    val displayName = room.userDisplayName(userId).getOrNull() ?: userId.displayNameWithAt
                     VerifiedUserSendFailure.ChangedIdentity(displayName)
                 }
             }

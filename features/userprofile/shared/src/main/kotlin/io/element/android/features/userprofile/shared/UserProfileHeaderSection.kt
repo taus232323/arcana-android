@@ -57,7 +57,7 @@ fun UserProfileHeaderSection(
     withdrawVerificationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val displayUserId = userId.extractedDisplayName
+    val displayUserId = userId.displayNameWithAt
 
     Column(
         modifier = modifier

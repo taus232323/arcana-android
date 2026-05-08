@@ -79,7 +79,7 @@ fun UserProfileView(
                 userName = state.userName,
                 verificationState = state.verificationState,
                 openAvatarPreview = { avatarUrl ->
-                    openAvatarPreview(state.userName ?: state.userId.extractedDisplayName, avatarUrl)
+                    openAvatarPreview(state.userName ?: state.userId.displayNameWithAt, avatarUrl)
                 },
                 onUserIdClick = {
                     state.eventSink(UserProfileEvents.CopyToClipboard(state.userId.value))

@@ -116,12 +116,7 @@ class DefaultFtueServiceTest {
 
         service.ftueStepStateFlow.test {
             assertThat(awaitItem()).isEqualTo(InternalFtueState.Unknown)
-            // Session verification
-            assertThat(awaitItem()).isEqualTo(InternalFtueState.Incomplete(FtueStep.SessionVerification))
-            sessionVerificationService.emitVerifiedStatus(SessionVerifiedStatus.Verified)
-            // User completes verification
-            service.onUserCompletedSessionVerification()
-            // Notifications opt in
+            // Session verification is skipped in Arcana, so we start at notifications.
             assertThat(awaitItem()).isEqualTo(InternalFtueState.Incomplete(FtueStep.NotificationsOptIn))
             permissionStateProvider.setPermissionGranted()
             // Simulate event from NotificationsOptInNode.Callback.onNotificationsOptInFinished

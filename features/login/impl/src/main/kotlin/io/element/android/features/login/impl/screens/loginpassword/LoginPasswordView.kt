@@ -337,10 +337,7 @@ private fun LoginVerificationContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .onTabOrEnterKeyFocusNext(focusManager)
-                .testTag(TestTags.loginVerificationCode)
-                .semantics {
-                    contentType = ContentType.Password
-                },
+                .testTag(TestTags.loginVerificationCode),
             placeholder = stringResource(R.string.screen_login_verification_code_label),
             onValueChange = {
                 val sanitized = it.sanitize()

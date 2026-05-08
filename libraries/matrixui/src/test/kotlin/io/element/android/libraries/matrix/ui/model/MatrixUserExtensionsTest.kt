@@ -60,7 +60,7 @@ class MatrixUserExtensionsTest {
             userId = A_USER_ID,
             displayName = null,
         )
-        assertThat(matrixUser.getBestName()).isEqualTo(A_USER_ID.extractedDisplayName)
+        assertThat(matrixUser.getBestName()).isEqualTo(A_USER_ID.displayNameWithAt)
     }
 
     @Test
@@ -69,7 +69,7 @@ class MatrixUserExtensionsTest {
             userId = A_USER_ID,
             displayName = "",
         )
-        assertThat(matrixUser.getBestName()).isEqualTo(A_USER_ID.extractedDisplayName)
+        assertThat(matrixUser.getBestName()).isEqualTo(A_USER_ID.displayNameWithAt)
     }
 
     @Test
@@ -83,7 +83,7 @@ class MatrixUserExtensionsTest {
                 matrixUser.getFullName()
             }
         }.test {
-            assertThat(awaitItem()).isEqualTo("displayName (alice)")
+            assertThat(awaitItem()).isEqualTo("displayName (@alice)")
         }
     }
 
@@ -96,7 +96,7 @@ class MatrixUserExtensionsTest {
         moleculeFlow(RecompositionMode.Immediate) {
             matrixUser.getFullName()
         }.test {
-            assertThat(awaitItem()).isEqualTo(A_USER_ID.extractedDisplayName)
+            assertThat(awaitItem()).isEqualTo(A_USER_ID.displayNameWithAt)
         }
     }
 }

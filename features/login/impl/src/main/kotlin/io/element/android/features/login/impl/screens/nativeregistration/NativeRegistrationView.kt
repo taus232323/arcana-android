@@ -247,14 +247,13 @@ private fun CodeStepContent(
             color = ElementTheme.colors.textPrimary,
         )
         Spacer(Modifier.height(16.dp))
-            TextField(
-                label = stringResource(R.string.screen_login_verification_code_label),
-                value = verificationCodeFieldState,
-                enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onTabOrEnterKeyFocusNext(focusManager)
-                    .semantics { contentType = ContentType.Password },
+        TextField(
+            label = stringResource(R.string.screen_login_verification_code_label),
+            value = verificationCodeFieldState,
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onTabOrEnterKeyFocusNext(focusManager),
             placeholder = stringResource(R.string.screen_login_verification_code_label),
             onValueChange = {
                 val sanitized = it.sanitize()

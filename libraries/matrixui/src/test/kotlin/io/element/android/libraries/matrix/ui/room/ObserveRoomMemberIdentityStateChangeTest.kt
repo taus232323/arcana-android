@@ -198,9 +198,9 @@ class ObserveRoomMemberIdentityStateChangeTest {
                 val carolChange = result.first()
                 assertThat(carolChange.identityRoomMember.userId).isEqualTo(carolRoomMember.userId)
                 assertThat(carolChange.identityState).isEqualTo(IdentityState.PinViolation)
-                // Should use extracted display name from user ID since member not found
+                // Should use the display localpart from user ID since member not found
                 assertThat(carolChange.identityRoomMember.displayNameOrDefault).isEqualTo(
-                    carolRoomMember.userId.extractedDisplayName
+                    carolRoomMember.userId.displayNameWithAt
                 )
             }
         }

@@ -32,7 +32,7 @@ fun SearchSingleUserResultItem(
         UnresolvedUserRow(
             modifier = modifier.clickable(onClick = onClick),
             avatarData = searchResult.matrixUser.getAvatarData(AvatarSize.UserListItem),
-            id = searchResult.matrixUser.userId.extractedDisplayName,
+            id = searchResult.matrixUser.userId.displayNameWithAt,
         )
     } else {
         MatrixUserRow(

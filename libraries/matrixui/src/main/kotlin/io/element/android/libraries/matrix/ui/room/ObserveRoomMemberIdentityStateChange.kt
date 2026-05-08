@@ -60,7 +60,7 @@ private fun RoomMember.toIdentityRoomMember() = IdentityRoomMember(
 
 private fun createDefaultRoomMemberForIdentityChange(userId: UserId) = IdentityRoomMember(
     userId = userId,
-    displayNameOrDefault = userId.extractedDisplayName,
+    displayNameOrDefault = userId.displayNameWithAt,
     avatarData = AvatarData(
         id = userId.value,
         name = null,

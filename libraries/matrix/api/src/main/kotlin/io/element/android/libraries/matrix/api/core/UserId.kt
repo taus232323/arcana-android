@@ -31,6 +31,9 @@ value class UserId(val value: String) : Serializable {
             .removePrefix("@")
             .substringBefore(":")
 
+    val displayNameWithAt: String
+        get() = "@$extractedDisplayName"
+
     val domainName: String?
         get() = value.substringAfter(":").takeIf { it.isNotEmpty() }
 }

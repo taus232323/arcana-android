@@ -247,9 +247,9 @@ private fun RoomMemberActionsBottomSheet(
                     .fillMaxWidth()
             )
             // Show user ID only if it's different from the display name
-            if (bestName != user.userId.extractedDisplayName) {
+            if (bestName != user.userId.displayNameWithAt) {
                 Text(
-                    text = user.userId.extractedDisplayName,
+                    text = user.userId.displayNameWithAt,
                     style = ElementTheme.typography.fontBodyMdRegular,
                     color = ElementTheme.colors.textSecondary,
                     maxLines = 1,

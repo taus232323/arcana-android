@@ -99,7 +99,7 @@ class IdentityChangeStatePresenterTest {
             assertThat(finalItem.roomMemberIdentityStateChanges).hasSize(1)
             val value = finalItem.roomMemberIdentityStateChanges.first()
             assertThat(value.identityRoomMember.userId).isEqualTo(A_USER_ID_2)
-            assertThat(value.identityRoomMember.displayNameOrDefault).isEqualTo(A_USER_ID_2.extractedDisplayName)
+            assertThat(value.identityRoomMember.displayNameOrDefault).isEqualTo(A_USER_ID_2.displayNameWithAt)
             assertThat(value.identityState).isEqualTo(IdentityState.PinViolation)
         }
     }

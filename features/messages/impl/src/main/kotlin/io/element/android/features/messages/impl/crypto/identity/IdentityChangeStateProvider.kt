@@ -58,7 +58,7 @@ internal fun anIdentityChangeState(
 
 internal fun anIdentityRoomMember(
     userId: UserId = UserId("@alice:example.com"),
-    displayNameOrDefault: String = userId.extractedDisplayName,
+    displayNameOrDefault: String = userId.displayNameWithAt,
     avatarData: AvatarData = AvatarData(
         id = userId.value,
         name = null,

@@ -31,6 +31,6 @@ interface KnockRequestPresentable {
     )
 
     fun getBestName(): String {
-        return displayName?.takeIf { it.isNotEmpty() } ?: userId.extractedDisplayName
+        return displayName?.takeIf { it.isNotEmpty() } ?: userId.displayNameWithAt
     }
 }
