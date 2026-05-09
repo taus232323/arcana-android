@@ -56,8 +56,6 @@ data class RoomListState(
 
 enum class SecurityBannerState {
     None,
-    SetUpRecovery,
-    RecoveryKeyConfirmation,
 }
 
 @Immutable

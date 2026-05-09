@@ -12,7 +12,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -49,7 +48,7 @@ class RoomListViewTest {
         val eventsRecorder = EventsRecorder<RoomListEvent>()
         rule.setRoomListView(
             state = aRoomListState(
-                contentState = aRoomsContentState(securityBannerState = SecurityBannerState.RecoveryKeyConfirmation),
+                contentState = aRoomsContentState(),
                 eventSink = eventsRecorder,
             )
         )
@@ -59,81 +58,6 @@ class RoomListViewTest {
                 RoomListEvent.UpdateVisibleRange(0..5),
             )
         )
-    }
-
-    @Test
-    fun `clicking on close recovery key banner emits the expected Event`() {
-        val eventsRecorder = EventsRecorder<RoomListEvent>()
-        rule.setRoomListView(
-            state = aRoomListState(
-                contentState = aRoomsContentState(securityBannerState = SecurityBannerState.RecoveryKeyConfirmation),
-                eventSink = eventsRecorder,
-            )
-        )
-
-        // Remove automatic initial events
-        eventsRecorder.clear()
-
-        val close = rule.activity.getString(CommonStrings.action_close)
-        rule.onNodeWithContentDescription(close).performClick()
-        eventsRecorder.assertSingle(RoomListEvent.DismissBanner)
-    }
-
-    @Test
-    fun `clicking on close setup key banner emits the expected Event`() {
-        val eventsRecorder = EventsRecorder<RoomListEvent>()
-        rule.setRoomListView(
-            state = aRoomListState(
-                contentState = aRoomsContentState(securityBannerState = SecurityBannerState.SetUpRecovery),
-                eventSink = eventsRecorder,
-            )
-        )
-
-        // Remove automatic initial events
-        eventsRecorder.clear()
-
-        val close = rule.activity.getString(CommonStrings.action_close)
-        rule.onNodeWithContentDescription(close).performClick()
-        eventsRecorder.assertSingle(RoomListEvent.DismissBanner)
-    }
-
-    @Test
-    fun `clicking on continue recovery key banner invokes the expected callback`() {
-        val eventsRecorder = EventsRecorder<RoomListEvent>()
-        ensureCalledOnce { callback ->
-            rule.setRoomListView(
-                state = aRoomListState(
-                    contentState = aRoomsContentState(securityBannerState = SecurityBannerState.RecoveryKeyConfirmation),
-                    eventSink = eventsRecorder,
-                ),
-                onConfirmRecoveryKeyClick = callback,
-            )
-
-            // Remove automatic initial events
-            eventsRecorder.clear()
-
-            rule.clickOn(CommonStrings.action_continue)
-
-            eventsRecorder.assertEmpty()
-        }
-    }
-
-    @Test
-    fun `clicking on continue setup key banner invokes the expected callback`() {
-        val eventsRecorder = EventsRecorder<RoomListEvent>()
-        ensureCalledOnce { callback ->
-            rule.setRoomListView(
-                state = aRoomListState(
-                    contentState = aRoomsContentState(securityBannerState = SecurityBannerState.SetUpRecovery),
-                    eventSink = eventsRecorder,
-                ),
-                onSetUpRecoveryClick = callback,
-            )
-            // Remove automatic initial events
-            eventsRecorder.clear()
-            rule.clickOn(R.string.banner_set_up_recovery_submit)
-            eventsRecorder.assertEmpty()
-        }
     }
 
     @Test
@@ -269,8 +193,6 @@ private fun <R : TestRule> AndroidComposeTestRule<R, ComponentActivity>.setRoomL
     state: RoomListState,
     onRoomClick: (RoomId) -> Unit = EnsureNeverCalledWithParam(),
     onSettingsClick: () -> Unit = EnsureNeverCalled(),
-    onSetUpRecoveryClick: () -> Unit = EnsureNeverCalled(),
-    onConfirmRecoveryKeyClick: () -> Unit = EnsureNeverCalled(),
     onCreateRoomClick: () -> Unit = EnsureNeverCalled(),
     onCreateSpaceClick: () -> Unit = EnsureNeverCalled(),
     onRoomSettingsClick: (RoomId) -> Unit = EnsureNeverCalledWithParam(),
@@ -283,8 +205,6 @@ private fun <R : TestRule> AndroidComposeTestRule<R, ComponentActivity>.setRoomL
             homeState = aHomeState(roomListState = state),
             onRoomClick = onRoomClick,
             onSettingsClick = onSettingsClick,
-            onSetUpRecoveryClick = onSetUpRecoveryClick,
-            onConfirmRecoveryKeyClick = onConfirmRecoveryKeyClick,
             onStartChatClick = onCreateRoomClick,
             onCreateSpaceClick = onCreateSpaceClick,
             onRoomSettingsClick = onRoomSettingsClick,

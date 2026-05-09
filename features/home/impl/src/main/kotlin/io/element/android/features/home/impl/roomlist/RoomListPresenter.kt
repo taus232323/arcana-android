@@ -47,7 +47,6 @@ import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.fullscreenintent.api.FullScreenIntentPermissionsState
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.RoomId
-import io.element.android.libraries.matrix.api.encryption.RecoveryState
 import io.element.android.libraries.matrix.api.roomlist.RoomList
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
 import io.element.android.libraries.matrix.api.timeline.ReceiptType
@@ -205,20 +204,8 @@ class RoomListPresenter(
 
     private fun calculateBannerState(
         securityBannerDismissed: Boolean,
-        recoveryState: RecoveryState,
+        recoveryState: io.element.android.libraries.matrix.api.encryption.RecoveryState,
     ): SecurityBannerState {
-        if (securityBannerDismissed) {
-            return SecurityBannerState.None
-        }
-
-        when (recoveryState) {
-            RecoveryState.DISABLED -> return SecurityBannerState.SetUpRecovery
-            RecoveryState.INCOMPLETE -> return SecurityBannerState.RecoveryKeyConfirmation
-            RecoveryState.UNKNOWN,
-            RecoveryState.WAITING_FOR_SYNC,
-            RecoveryState.ENABLED -> Unit
-        }
-
         return SecurityBannerState.None
     }
 

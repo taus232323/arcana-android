@@ -153,9 +153,9 @@ class RoomListPresenterTest {
                 it.contentState is RoomListContentState.Rooms
             }.last()
             val eventSink = eventWithContentAsRooms.eventSink
-            assertThat(eventWithContentAsRooms.contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.RecoveryKeyConfirmation)
+            assertThat(eventWithContentAsRooms.contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.None)
             eventSink(RoomListEvent.DismissRequestVerificationPrompt)
-            assertThat(awaitItem().contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.None)
+            expectNoEvents()
         }
     }
 
@@ -185,24 +185,15 @@ class RoomListPresenterTest {
             val initialState = consumeItemsUntilPredicate {
                 it.contentState is RoomListContentState.Rooms
             }.last()
-            assertThat(initialState.contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.SetUpRecovery)
-            encryptionService.emitRecoveryState(RecoveryState.INCOMPLETE)
-            val nextState = awaitItem()
-            assertThat(nextState.contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.RecoveryKeyConfirmation)
-            // Also check other states
-            encryptionService.emitRecoveryState(RecoveryState.DISABLED)
-            assertThat(awaitItem().contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.SetUpRecovery)
-            encryptionService.emitRecoveryState(RecoveryState.WAITING_FOR_SYNC)
-            assertThat(awaitItem().contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.None)
-            encryptionService.emitRecoveryState(RecoveryState.DISABLED)
-            assertThat(awaitItem().contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.SetUpRecovery)
-            encryptionService.emitRecoveryState(RecoveryState.ENABLED)
-            assertThat(awaitItem().contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.None)
-            encryptionService.emitRecoveryState(RecoveryState.DISABLED)
-            assertThat(awaitItem().contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.SetUpRecovery)
-            nextState.eventSink(RoomListEvent.DismissBanner)
-            val finalState = awaitItem()
-            assertThat(finalState.contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.None)
+            assertThat(initialState.contentAsRooms().securityBannerState).isEqualTo(SecurityBannerState.None)
+            encryptionService.emitRecoveryState(io.element.android.libraries.matrix.api.encryption.RecoveryState.INCOMPLETE)
+            expectNoEvents()
+            encryptionService.emitRecoveryState(io.element.android.libraries.matrix.api.encryption.RecoveryState.DISABLED)
+            expectNoEvents()
+            encryptionService.emitRecoveryState(io.element.android.libraries.matrix.api.encryption.RecoveryState.WAITING_FOR_SYNC)
+            expectNoEvents()
+            encryptionService.emitRecoveryState(io.element.android.libraries.matrix.api.encryption.RecoveryState.ENABLED)
+            expectNoEvents()
         }
     }
 

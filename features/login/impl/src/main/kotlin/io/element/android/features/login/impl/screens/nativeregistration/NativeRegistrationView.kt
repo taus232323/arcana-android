@@ -30,12 +30,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -253,14 +255,17 @@ private fun CodeStepContent(
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .onTabOrEnterKeyFocusNext(focusManager),
+                .onTabOrEnterKeyFocusNext(focusManager)
+                .semantics {
+                    contentDataType = ContentDataType.None
+                },
             placeholder = stringResource(R.string.screen_login_verification_code_label),
             onValueChange = {
                 val sanitized = it.sanitize()
                 verificationCodeFieldState = sanitized
                 state.eventSink(NativeRegistrationEvents.SetVerificationCode(sanitized))
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSubmit() }),
             singleLine = true,
             trailingIcon = if (verificationCodeFieldState.isNotEmpty()) {

@@ -44,7 +44,6 @@ import io.element.android.features.home.impl.model.RoomSummaryDisplayType
 import io.element.android.features.home.impl.roomlist.RoomListContentState
 import io.element.android.features.home.impl.roomlist.RoomListContentStateProvider
 import io.element.android.features.home.impl.roomlist.RoomListEvent
-import io.element.android.features.home.impl.roomlist.SecurityBannerState
 import io.element.android.features.home.impl.spacefilters.SpaceFiltersState
 import io.element.android.features.home.impl.spacefilters.anUnselectedSpaceFiltersState
 import io.element.android.libraries.designsystem.preview.ElementPreview
@@ -65,8 +64,6 @@ fun RoomListContentView(
     lazyListState: LazyListState,
     hideInvitesAvatars: Boolean,
     eventSink: (RoomListEvent) -> Unit,
-    onSetUpRecoveryClick: () -> Unit,
-    onConfirmRecoveryKeyClick: () -> Unit,
     onRoomClick: (RoomListRoomSummary) -> Unit,
     onCreateRoomClick: () -> Unit,
     contentPadding: PaddingValues,
@@ -85,8 +82,6 @@ fun RoomListContentView(
                 modifier = modifier.padding(contentPadding),
                 state = contentState,
                 eventSink = eventSink,
-                onSetUpRecoveryClick = onSetUpRecoveryClick,
-                onConfirmRecoveryKeyClick = onConfirmRecoveryKeyClick,
                 onCreateRoomClick = onCreateRoomClick,
             )
         }
@@ -98,8 +93,6 @@ fun RoomListContentView(
                 filtersState = filtersState,
                 spaceFiltersState = spaceFiltersState,
                 eventSink = eventSink,
-                onSetUpRecoveryClick = onSetUpRecoveryClick,
-                onConfirmRecoveryKeyClick = onConfirmRecoveryKeyClick,
                 onRoomClick = onRoomClick,
                 lazyListState = lazyListState,
                 contentPadding = contentPadding,
@@ -133,8 +126,6 @@ private fun SkeletonView(
 private fun EmptyView(
     state: RoomListContentState.Empty,
     eventSink: (RoomListEvent) -> Unit,
-    onSetUpRecoveryClick: () -> Unit,
-    onConfirmRecoveryKeyClick: () -> Unit,
     onCreateRoomClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -151,23 +142,6 @@ private fun EmptyView(
             },
             modifier = Modifier.align(Alignment.Center),
         )
-        Box {
-            when (state.securityBannerState) {
-                SecurityBannerState.SetUpRecovery -> {
-                    SetUpRecoveryKeyBanner(
-                        onContinueClick = onSetUpRecoveryClick,
-                        onDismissClick = { eventSink(RoomListEvent.DismissBanner) },
-                    )
-                }
-                SecurityBannerState.RecoveryKeyConfirmation -> {
-                    ConfirmRecoveryKeyBanner(
-                        onContinueClick = onConfirmRecoveryKeyClick,
-                        onDismissClick = { eventSink(RoomListEvent.DismissBanner) },
-                    )
-                }
-                SecurityBannerState.None -> Unit
-            }
-        }
     }
 }
 
@@ -178,8 +152,6 @@ private fun RoomsView(
     filtersState: RoomListFiltersState,
     spaceFiltersState: SpaceFiltersState,
     eventSink: (RoomListEvent) -> Unit,
-    onSetUpRecoveryClick: () -> Unit,
-    onConfirmRecoveryKeyClick: () -> Unit,
     onRoomClick: (RoomListRoomSummary) -> Unit,
     contentPadding: PaddingValues,
     lazyListState: LazyListState,
@@ -198,8 +170,6 @@ private fun RoomsView(
             state = state,
             hideInvitesAvatars = hideInvitesAvatars,
             eventSink = eventSink,
-            onSetUpRecoveryClick = onSetUpRecoveryClick,
-            onConfirmRecoveryKeyClick = onConfirmRecoveryKeyClick,
             onRoomClick = onRoomClick,
             contentPadding = contentPadding,
             lazyListState = lazyListState,
@@ -213,8 +183,6 @@ private fun RoomsViewList(
     state: RoomListContentState.Rooms,
     hideInvitesAvatars: Boolean,
     eventSink: (RoomListEvent) -> Unit,
-    onSetUpRecoveryClick: () -> Unit,
-    onConfirmRecoveryKeyClick: () -> Unit,
     onRoomClick: (RoomListRoomSummary) -> Unit,
     contentPadding: PaddingValues,
     lazyListState: LazyListState,
@@ -228,37 +196,19 @@ private fun RoomsViewList(
         modifier = modifier,
         contentPadding = contentPadding,
     ) {
-        when (state.securityBannerState) {
-            SecurityBannerState.SetUpRecovery -> {
-                item {
-                    SetUpRecoveryKeyBanner(
-                        onContinueClick = onSetUpRecoveryClick,
-                        onDismissClick = { eventSink(RoomListEvent.DismissBanner) },
-                    )
-                }
+        if (state.fullScreenIntentPermissionsState.shouldDisplayBanner) {
+            item {
+                FullScreenIntentPermissionBanner(state = state.fullScreenIntentPermissionsState)
             }
-            SecurityBannerState.RecoveryKeyConfirmation -> {
-                item {
-                    ConfirmRecoveryKeyBanner(
-                        onContinueClick = onConfirmRecoveryKeyClick,
-                        onDismissClick = { eventSink(RoomListEvent.DismissBanner) },
-                    )
-                }
+        } else if (state.batteryOptimizationState.shouldDisplayBanner) {
+            item {
+                BatteryOptimizationBanner(state = state.batteryOptimizationState)
             }
-            SecurityBannerState.None -> if (state.fullScreenIntentPermissionsState.shouldDisplayBanner) {
-                item {
-                    FullScreenIntentPermissionBanner(state = state.fullScreenIntentPermissionsState)
-                }
-            } else if (state.batteryOptimizationState.shouldDisplayBanner) {
-                item {
-                    BatteryOptimizationBanner(state = state.batteryOptimizationState)
-                }
-            } else if (state.showNewNotificationSoundBanner) {
-                item {
-                    NewNotificationSoundBanner(
-                        onDismissClick = { eventSink(RoomListEvent.DismissNewNotificationSoundBanner) },
-                    )
-                }
+        } else if (state.showNewNotificationSoundBanner) {
+            item {
+                NewNotificationSoundBanner(
+                    onDismissClick = { eventSink(RoomListEvent.DismissNewNotificationSoundBanner) },
+                )
             }
         }
 
@@ -343,8 +293,6 @@ internal fun RoomListContentViewPreview(@PreviewParameter(RoomListContentStatePr
         spaceFiltersState = anUnselectedSpaceFiltersState(),
         hideInvitesAvatars = false,
         eventSink = {},
-        onSetUpRecoveryClick = {},
-        onConfirmRecoveryKeyClick = {},
         onRoomClick = {},
         onCreateRoomClick = {},
         lazyListState = rememberLazyListState(),
