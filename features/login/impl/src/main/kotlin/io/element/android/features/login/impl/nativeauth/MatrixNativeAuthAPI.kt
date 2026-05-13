@@ -40,6 +40,11 @@ internal interface MatrixNativeAuthAPI {
         @Body body: EmailRequestTokenRequest,
     ): Response<EmailRequestTokenResponse>
 
+    @POST("/_matrix/client/v3/account/password/email/submitToken")
+    suspend fun submitPasswordResetEmailToken(
+        @Body body: RegistrationEmailSubmitRequest,
+    ): Response<EmailRequestTokenResponse>
+
     @POST("/_matrix/client/v3/login")
     suspend fun requestEmailLoginVerification(
         @Body body: EmailLoginRequest,

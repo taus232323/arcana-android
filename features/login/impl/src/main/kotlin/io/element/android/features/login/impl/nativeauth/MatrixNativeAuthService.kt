@@ -52,11 +52,16 @@ interface MatrixNativeAuthService {
     suspend fun startPasswordReset(
         homeserverUrl: String,
         email: String,
-        newPassword: String,
+    ): Result<PasswordResetResult>
+
+    suspend fun submitPasswordResetEmailCode(
+        pendingPasswordReset: PendingPasswordReset,
+        verificationCode: String,
     ): Result<PasswordResetResult>
 
     suspend fun continuePasswordReset(
         pendingPasswordReset: PendingPasswordReset,
+        newPassword: String,
     ): Result<PasswordResetResult>
 
     suspend fun resendPasswordResetEmail(
@@ -184,51 +189,83 @@ class DefaultMatrixNativeAuthService(
     override suspend fun startPasswordReset(
         homeserverUrl: String,
         email: String,
-        newPassword: String,
     ): Result<PasswordResetResult> = runCatchingExceptions {
+        if (email.isBlank()) {
+            throw NativeAuthException.EmailRequired
+        }
         val baseUrl = homeserverUrl.toApiBaseUrl()
-        advancePasswordReset(
-            pendingPasswordReset = PendingPasswordReset(
-                homeserverUrl = baseUrl,
-                email = email,
-                newPassword = newPassword,
-                clientSecret = UUID.randomUUID().toString(),
-                sendAttempt = 0,
-                sid = null,
-                session = null,
-                completedStages = emptyList(),
-                flows = emptyList(),
-            ),
-            response = api(baseUrl).resetPassword(
-                ResetPasswordRequest(
-                    newPassword = newPassword,
-                )
-            ),
-            attemptedStage = null,
+        val pendingPasswordReset = PendingPasswordReset(
+            homeserverUrl = baseUrl,
+            email = email.trim(),
+            clientSecret = UUID.randomUUID().toString(),
+            sendAttempt = 1,
+            sid = null,
+            session = null,
+            completedStages = emptyList(),
+            flows = emptyList(),
         )
+        val response = api(baseUrl).requestPasswordResetEmailToken(
+            EmailRequestTokenRequest(
+                clientSecret = pendingPasswordReset.clientSecret,
+                email = pendingPasswordReset.email,
+                sendAttempt = pendingPasswordReset.sendAttempt,
+            )
+        )
+        if (response.isSuccessful) {
+            PasswordResetResult.AwaitingEmailVerification(
+                pendingPasswordReset.copy(sid = requireNotNull(response.body()).sid)
+            )
+        } else {
+            throw parseError(response.errorBody())
+        }
+    }
+
+    override suspend fun submitPasswordResetEmailCode(
+        pendingPasswordReset: PendingPasswordReset,
+        verificationCode: String,
+    ): Result<PasswordResetResult> = runCatchingExceptions {
+        val response = api(pendingPasswordReset.homeserverUrl).submitPasswordResetEmailToken(
+            RegistrationEmailSubmitRequest(
+                clientSecret = pendingPasswordReset.clientSecret,
+                sid = requireNotNull(pendingPasswordReset.sid),
+                token = verificationCode,
+            )
+        )
+        if (response.isSuccessful) {
+            PasswordResetResult.AwaitingCredentials(
+                pendingPasswordReset.copy(sid = requireNotNull(response.body()).sid)
+            )
+        } else {
+            throw when (val error = parseError(response.errorBody())) {
+                NativeAuthException.InvalidCredentials -> NativeAuthException.InvalidVerificationCode
+                is NativeAuthException.MessageError -> NativeAuthException.InvalidVerificationCode
+                else -> error
+            }
+        }
     }
 
     override suspend fun continuePasswordReset(
         pendingPasswordReset: PendingPasswordReset,
+        newPassword: String,
     ): Result<PasswordResetResult> = runCatchingExceptions {
-        val next = pendingPasswordReset.withEmailSession()
-        advancePasswordReset(
-            pendingPasswordReset = next,
-            response = api(next.homeserverUrl).resetPassword(
-                ResetPasswordRequest(
-                    newPassword = next.newPassword,
-                    auth = AuthRequest(
-                        type = EMAIL_IDENTITY_STAGE,
-                        session = next.session,
-                        threePidCreds = ThreePidCredentials(
-                            clientSecret = next.clientSecret,
-                            sid = requireNotNull(next.sid),
-                        ),
+        val response = api(pendingPasswordReset.homeserverUrl).resetPassword(
+            ResetPasswordRequest(
+                newPassword = newPassword,
+                auth = AuthRequest(
+                    type = EMAIL_IDENTITY_STAGE,
+                    session = pendingPasswordReset.session,
+                    threePidCreds = ThreePidCredentials(
+                        clientSecret = pendingPasswordReset.clientSecret,
+                        sid = requireNotNull(pendingPasswordReset.sid),
                     ),
-                )
-            ),
-            attemptedStage = EMAIL_IDENTITY_STAGE,
+                ),
+            )
         )
+        if (response.isSuccessful) {
+            PasswordResetResult.Success
+        } else {
+            throw parseError(response.errorBody())
+        }
     }
 
     override suspend fun resendPasswordResetEmail(
@@ -361,86 +398,6 @@ class DefaultMatrixNativeAuthService(
         )
     }
 
-    private suspend fun advancePasswordReset(
-        pendingPasswordReset: PendingPasswordReset,
-        response: Response<Unit>,
-        attemptedStage: String?,
-    ): PasswordResetResult {
-        if (response.isSuccessful) {
-            return PasswordResetResult.Success
-        }
-        val uiaa = parseUiaa(response.errorBody())
-        val updated = pendingPasswordReset.copy(
-            session = uiaa.session ?: pendingPasswordReset.session,
-            completedStages = uiaa.completed,
-            flows = uiaa.flows,
-        )
-        val resetFlow = updated.compatibleFlow()
-        if (attemptedStage == EMAIL_IDENTITY_STAGE && EMAIL_IDENTITY_STAGE !in updated.completedStages) {
-            return PasswordResetResult.AwaitingEmailVerification(updated)
-        }
-        val nextStage = resetFlow.firstOrNull { it !in updated.completedStages }
-        return when (nextStage) {
-            DUMMY_STAGE -> advancePasswordReset(
-                pendingPasswordReset = updated,
-                response = api(updated.homeserverUrl).resetPassword(
-                    ResetPasswordRequest(
-                        newPassword = updated.newPassword,
-                        auth = AuthRequest(
-                            type = DUMMY_STAGE,
-                            session = updated.session,
-                        ),
-                    )
-                ),
-                attemptedStage = DUMMY_STAGE,
-            )
-            EMAIL_IDENTITY_STAGE -> {
-                if (updated.sid == null) {
-                    val emailResponse = api(updated.homeserverUrl).requestPasswordResetEmailToken(
-                        EmailRequestTokenRequest(
-                            clientSecret = updated.clientSecret,
-                            email = updated.email,
-                            sendAttempt = updated.sendAttempt + 1,
-                        )
-                    )
-                    if (!emailResponse.isSuccessful) {
-                        throw parseError(emailResponse.errorBody())
-                    }
-                    PasswordResetResult.AwaitingEmailVerification(
-                        updated.copy(
-                            sid = requireNotNull(emailResponse.body()).sid,
-                            sendAttempt = updated.sendAttempt + 1,
-                        )
-                    )
-                } else {
-                    PasswordResetResult.AwaitingEmailVerification(updated)
-                }
-            }
-            null -> throw NativeAuthException.UnsupportedAuthenticationFlow(updated.flows.map { it.stages })
-            else -> throw NativeAuthException.UnsupportedAuthenticationFlow(updated.flows.map { it.stages })
-        }
-    }
-
-    private fun PendingPasswordReset.compatibleFlow(): List<String> {
-        return flows.firstOrNull { flow ->
-            flow.stages.isNotEmpty() && flow.stages.all { it in knownPasswordResetStages }
-        }?.stages.orEmpty()
-    }
-
-    private fun parseUiaa(errorBody: ResponseBody?): UiaaResponse {
-        val payload = errorBody?.string()
-        return runCatchingExceptions {
-            requireNotNull(payload)
-            val response = jsonProvider().decodeFromString(UiaaResponse.serializer(), payload)
-            if (response.session == null && response.completed.isEmpty() && response.flows.isEmpty()) {
-                throw parseError(payload)
-            }
-            response
-        }.getOrElse {
-            throw parseError(payload)
-        }
-    }
-
     private fun parseError(errorBody: ResponseBody?): Throwable {
         return parseError(errorBody?.string())
     }
@@ -482,12 +439,6 @@ class DefaultMatrixNativeAuthService(
         return retrofitFactory.create(baseUrl).create(MatrixNativeAuthAPI::class.java)
     }
 
-    private fun PendingPasswordReset.withEmailSession(): PendingPasswordReset {
-        check(session != null) { "UIAA session is required for email verification." }
-        check(sid != null) { "Email sid is required for email verification." }
-        return this
-    }
-
     private fun PendingEmailLogin.withEmailSession(): PendingEmailLogin {
         check(sid != null) { "Email sid is required for email verification." }
         check(email != null) { "Email is required for email verification." }
@@ -509,13 +460,7 @@ class DefaultMatrixNativeAuthService(
     }
 
     private companion object {
-        const val DUMMY_STAGE = "m.login.dummy"
         const val EMAIL_IDENTITY_STAGE = "m.login.email.identity"
-        const val REGISTRATION_TOKEN_STAGE = "m.login.registration_token"
-        val knownPasswordResetStages = setOf(
-            EMAIL_IDENTITY_STAGE,
-            DUMMY_STAGE,
-        )
     }
 }
 
@@ -535,6 +480,10 @@ sealed interface RegistrationResult {
 
 sealed interface PasswordResetResult {
     data class AwaitingEmailVerification(
+        val pendingPasswordReset: PendingPasswordReset,
+    ) : PasswordResetResult
+
+    data class AwaitingCredentials(
         val pendingPasswordReset: PendingPasswordReset,
     ) : PasswordResetResult
 
@@ -563,7 +512,6 @@ data class PendingRegistration(
 data class PendingPasswordReset(
     val homeserverUrl: String,
     val email: String,
-    val newPassword: String,
     val clientSecret: String,
     val sendAttempt: Int,
     val sid: String?,

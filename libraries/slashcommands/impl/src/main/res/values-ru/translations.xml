@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="slash_command_error">Ошибка команды</string>
+    <string name="slash_command_unrecognized">Нераспознанная команда: %1$s</string>
+    <string name="slash_command_parameters_error">Команда "%1$s" требует больше параметров или часть параметров указана неверно. Синтаксис:\n\n%2$s</string>
+    <string name="slash_command_not_supported_in_threads">Команда "%1$s" распознана, но не поддерживается в тредах.</string>
+    <string name="slash_command_description_emote">Показывает действие</string>
+    <string name="slash_command_description_crash_application">Завершает работу приложения.</string>
+    <string name="slash_command_description_ban_user">Блокирует пользователя с указанным идентификатором</string>
+    <string name="slash_command_description_unban_user">Разблокирует пользователя с указанным идентификатором</string>
+    <string name="slash_command_description_ignore_user">Игнорирует пользователя, скрывая его сообщения</string>
+    <string name="slash_command_description_unignore_user">Перестаёт игнорировать пользователя и снова показывает его сообщения</string>
+    <string name="slash_command_description_op_user">Задаёт уровень прав пользователя</string>
+    <string name="slash_command_description_deop_user">Снимает права пользователя с указанным идентификатором</string>
+    <string name="slash_command_description_room_name">Задаёт название комнаты</string>
+    <string name="slash_command_description_rainbow">Отправляет сообщение, раскрашенное как радуга</string>
+    <string name="slash_command_description_rainbow_emote">Отправляет действие, раскрашенное как радуга</string>
+    <string name="slash_command_description_invite_user">Приглашает пользователя с указанным идентификатором в текущую комнату</string>
+    <string name="slash_command_description_join_room">Присоединяется к комнате по указанному адресу</string>
+    <string name="slash_command_description_spoiler">Отправляет сообщение как спойлер</string>
+    <string name="slash_command_description_topic">Задаёт тему комнаты</string>
+    <string name="slash_command_description_remove_user">Удаляет пользователя с указанным идентификатором из этой комнаты</string>
+    <string name="slash_command_description_nick">Меняет отображаемое имя</string>
+    <string name="slash_command_description_avatar">Меняет аватар профиля во всех комнатах</string>
+    <string name="slash_command_confetti">Отправляет сообщение с конфетти</string>
+    <string name="slash_command_snow">Отправляет сообщение со снегопадом</string>
+    <string name="slash_command_description_plain">Отправляет сообщение как обычный текст, без обработки Markdown</string>
+    <string name="slash_command_description_nick_for_room">Меняет отображаемое имя только в текущей комнате</string>
+    <string name="slash_command_description_room_avatar">Меняет аватар текущей комнаты</string>
+    <string name="slash_command_description_avatar_for_room">Меняет ваш аватар только в текущей комнате</string>
+    <string name="slash_command_description_devtools">Открывает экран инструментов разработчика</string>
+    <string name="slash_command_description_whois">Показывает информацию о пользователе</string>
+    <string name="slash_command_description_shrug">Добавляет к сообщению символы ¯\\_(ツ)_/¯</string>
+    <string name="slash_command_description_lenny">Добавляет к сообщению ( ͡° ͜ʖ ͡°)</string>
+    <string name="slash_command_description_table_flip">Добавляет к сообщению (╯°□°）╯︵ ┻━┻</string>
+    <string name="slash_command_description_unflip">Добавляет к сообщению ┬──┬ ノ( ゜-゜ノ)</string>
+    <string name="slash_command_description_discard_session">Принудительно сбрасывает текущую исходящую групповую сессию в зашифрованной комнате</string>
+    <string name="slash_command_description_discard_session_not_handled">Поддерживается только в зашифрованных комнатах</string>
+    <string name="slash_command_description_leave_room">Покидает текущую комнату</string>
+    <string name="slash_command_description_upgrade_room">Обновляет комнату до новой версии</string>
+
+    <string name="common_spoiler">Спойлер</string>
+</resources>

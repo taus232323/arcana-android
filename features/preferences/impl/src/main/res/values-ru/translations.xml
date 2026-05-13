@@ -33,6 +33,9 @@
   <string name="screen_advanced_settings_show_media_timeline_subtitle">"Скрытые медиа всегда можно просмотреть, нажав на них."</string>
   <string name="screen_advanced_settings_show_media_timeline_title">"Показать медиа в истории сообщений"</string>
   <string name="screen_advanced_settings_view_source_description">"Включить опцию просмотра источника сообщения в истории сообщений."</string>
+  <string name="screen_advanced_settings_arcana_call_base_url">"Пользовательский базовый URL Arcana Call"</string>
+  <string name="screen_advanced_settings_arcana_call_base_url_description">"Укажите свой базовый URL для Arcana Call."</string>
+  <string name="screen_advanced_settings_arcana_call_base_url_validation_error">"Неверный URL. Убедитесь, что указали протокол (http/https) и правильный адрес."</string>
   <string name="screen_blocked_users_empty">"У вас нет заблокированных пользователей"</string>
   <string name="screen_blocked_users_unblock_alert_action">"Разблокировать"</string>
   <string name="screen_blocked_users_unblock_alert_description">"Вы снова сможете увидеть все сообщения."</string>

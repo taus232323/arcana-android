@@ -9,11 +9,12 @@ package io.element.android.features.login.impl.screens.passwordreset
 
 sealed interface PasswordResetEvents {
     data class SetEmail(val email: String) : PasswordResetEvents
+    data class SetVerificationCode(val verificationCode: String) : PasswordResetEvents
     data class SetNewPassword(val newPassword: String) : PasswordResetEvents
     data class SetConfirmPassword(val confirmPassword: String) : PasswordResetEvents
     data object Submit : PasswordResetEvents
-    data object ConfirmEmailVerified : PasswordResetEvents
     data object ResendEmail : PasswordResetEvents
+    data object GoBack : PasswordResetEvents
     data object ClearError : PasswordResetEvents
     data object ClearSuccess : PasswordResetEvents
 }

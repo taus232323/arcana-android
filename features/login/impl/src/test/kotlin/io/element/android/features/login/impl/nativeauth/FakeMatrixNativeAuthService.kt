@@ -15,6 +15,10 @@ class FakeMatrixNativeAuthService(
     var submitRegistrationEmailCodeResult: (PendingRegistration, String) -> Result<RegistrationResult> = { _, _ -> lambdaError() },
     var finishRegistrationResult: (PendingRegistration, String?, String) -> Result<RegistrationResult> = { _, _, _ -> lambdaError() },
     var resendRegistrationEmailResult: (PendingRegistration) -> Result<PendingRegistration> = { _ -> lambdaError() },
+    var startPasswordResetResult: (String, String) -> Result<PasswordResetResult> = { _, _ -> lambdaError() },
+    var submitPasswordResetEmailCodeResult: (PendingPasswordReset, String) -> Result<PasswordResetResult> = { _, _ -> lambdaError() },
+    var continuePasswordResetResult: (PendingPasswordReset, String) -> Result<PasswordResetResult> = { _, _ -> lambdaError() },
+    var resendPasswordResetEmailResult: (PendingPasswordReset) -> Result<PendingPasswordReset> = { _ -> lambdaError() },
     var startEmailLoginResult: (String, String, String) -> Result<EmailLoginResult> = { _, _, _ -> lambdaError() },
     var continueEmailLoginResult: (PendingEmailLogin) -> Result<EmailLoginResult> = { _ -> lambdaError() },
     var resendEmailLoginCodeResult: (PendingEmailLogin) -> Result<PendingEmailLogin> = { _ -> lambdaError() },
@@ -50,16 +54,29 @@ class FakeMatrixNativeAuthService(
     override suspend fun startPasswordReset(
         homeserverUrl: String,
         email: String,
-        newPassword: String,
-    ): Result<PasswordResetResult> = simulateLongTask { lambdaError() }
+    ): Result<PasswordResetResult> = simulateLongTask {
+        startPasswordResetResult(homeserverUrl, email)
+    }
+
+    override suspend fun submitPasswordResetEmailCode(
+        pendingPasswordReset: PendingPasswordReset,
+        verificationCode: String,
+    ): Result<PasswordResetResult> = simulateLongTask {
+        submitPasswordResetEmailCodeResult(pendingPasswordReset, verificationCode)
+    }
 
     override suspend fun continuePasswordReset(
         pendingPasswordReset: PendingPasswordReset,
-    ): Result<PasswordResetResult> = simulateLongTask { lambdaError() }
+        newPassword: String,
+    ): Result<PasswordResetResult> = simulateLongTask {
+        continuePasswordResetResult(pendingPasswordReset, newPassword)
+    }
 
     override suspend fun resendPasswordResetEmail(
         pendingPasswordReset: PendingPasswordReset,
-    ): Result<PendingPasswordReset> = simulateLongTask { lambdaError() }
+    ): Result<PendingPasswordReset> = simulateLongTask {
+        resendPasswordResetEmailResult(pendingPasswordReset)
+    }
 
     override suspend fun startEmailLogin(
         homeserverUrl: String,

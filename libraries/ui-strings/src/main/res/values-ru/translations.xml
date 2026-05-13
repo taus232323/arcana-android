@@ -21,7 +21,7 @@
   <string name="a11y_notifications_mentions_only">"Только упоминания"</string>
   <string name="a11y_notifications_muted">"Без звука"</string>
   <string name="a11y_notifications_new_mentions">"Новые упоминания"</string>
-  <string name="a11y_notifications_new_messages">"Новые сообшения"</string>
+  <string name="a11y_notifications_new_messages">"Новые сообщения"</string>
   <string name="a11y_notifications_ongoing_call">"Текущий вызов"</string>
   <string name="a11y_other_user_avatar">"Аватар другого пользователя"</string>
   <string name="a11y_page_n">"Страница %1$d"</string>
@@ -123,7 +123,7 @@
   <string name="action_leave_space">"Покинуть пространство"</string>
   <string name="action_load_more">"Загрузить еще"</string>
   <string name="action_manage_account">"Настройки аккаунта"</string>
-  <string name="action_manage_account_and_devices">"Управление учетной записью и устройствами"</string>
+  <string name="action_manage_account_and_devices">"Управление аккаунтом и устройствами"</string>
   <string name="action_manage_devices">"Управление устройствами"</string>
   <string name="action_manage_rooms">"Управление комнатами"</string>
   <string name="action_message">"Написать"</string>
@@ -390,7 +390,7 @@
   <string name="common_unable_to_decrypt">"Невозможно расшифровать"</string>
   <string name="common_unable_to_decrypt_insecure_device">"Отправлено с незащищенного устройства"</string>
   <string name="common_unable_to_decrypt_no_access">"Вы не имеете доступа к этому сообщению"</string>
-  <string name="common_unable_to_decrypt_verification_violation">"Подтвержденная личность отправителя была сброшена"</string>
+  <string name="common_unable_to_decrypt_verification_violation">"Подтверждённая личность отправителя была сброшена"</string>
   <string name="common_unable_to_invite_message">"Не удалось отправить приглашения одному или нескольким пользователям."</string>
   <string name="common_unable_to_invite_title">"Не удалось отправить приглашение(я)"</string>
   <string name="common_unlock">"Разблокировать"</string>
@@ -450,7 +450,7 @@
   <string name="dialog_video_quality_selector_title">"Выберите качество загружаемого видео"</string>
   <string name="emoji_picker_search_placeholder">"Поиск эмодзи"</string>
   <string name="error_account_already_logged_in">"Вы уже вошли на данном устройстве как %1$s."</string>
-  <string name="error_account_creation_not_possible">"Домашний сервер необходимо обновить, чтобы он поддерживал Matrix Authentication Service и создание учётных записей."</string>
+  <string name="error_account_creation_not_possible">"Домашний сервер необходимо обновить, чтобы он поддерживал Matrix Authentication Service и создание аккаунтов."</string>
   <string name="error_failed_creating_the_permalink">"Не удалось создать постоянную ссылку"</string>
   <string name="error_failed_loading_map">"Не удалось загрузить карту %1$s. Пожалуйста, повторите попытку позже."</string>
   <string name="error_failed_loading_messages">"Не удалось загрузить сообщения"</string>
@@ -493,15 +493,15 @@
     <item quantity="many">"%1$d закреплённых сообщений"</item>
   </plurals>
   <string name="screen_pinned_timeline_screen_title_empty">"Закрепленные сообщения"</string>
-  <string name="screen_reset_identity_confirmation_subtitle">"Вы собираетесь перейти в свой аккаунт %1$s, чтобы сбросить личность. После этого Вы вернётесь в приложение."</string>
-  <string name="screen_reset_identity_confirmation_title">"Не можете подтвердить? Перейдите в свой аккаунт, чтобы сбросить свою личность."</string>
+  <string name="screen_reset_identity_confirmation_subtitle">"Вы собираетесь перейти в свой аккаунт %1$s, чтобы сбросить цифровую идентичность. После этого вы вернётесь в приложение."</string>
+  <string name="screen_reset_identity_confirmation_title">"Не можете подтвердить? Перейдите в свой аккаунт, чтобы сбросить цифровую идентичность."</string>
   <string name="screen_resolve_send_failure_changed_identity_primary_button_title">"Сбросить верификацию и отправить"</string>
   <string name="screen_resolve_send_failure_changed_identity_subtitle">"Вы можете либо сбросить подтверждение и всё равно отправить это сообщение, либо отменить его сейчас и повторить попытку после повторного подтверждения %1$s."</string>
-  <string name="screen_resolve_send_failure_changed_identity_title">"Ваше сообщение не было отправлено, потому что подтвержденная идентификации %1$s была сброшена"</string>
+  <string name="screen_resolve_send_failure_changed_identity_title">"Ваше сообщение не было отправлено, потому что подтверждённая цифровая идентичность %1$s была сброшена."</string>
   <string name="screen_resolve_send_failure_unsigned_device_primary_button_title">"Все равно отправить сообщение"</string>
-  <string name="screen_resolve_send_failure_unsigned_device_subtitle">"У %1$s есть одно или несколько неподтвержденных устройств. Вы все равно можете отправить сообщение или отменить его пока и повторить попытку позже, когда %2$s подтвердить все свои устройства."</string>
-  <string name="screen_resolve_send_failure_unsigned_device_title">"Ваше сообщение не было отправлено, потому что %1$s имеет неподтвержденные устройства"</string>
-  <string name="screen_resolve_send_failure_you_unsigned_device_subtitle">"Одно или несколько ваших устройств не подтверждены. Вы можете отправить сообщение в любом случае или отменить его пока и повторить попытку позже, подтвердив все свои устройства."</string>
+  <string name="screen_resolve_send_failure_unsigned_device_subtitle">"У %1$s есть одно или несколько неподтверждённых устройств. Вы всё равно можете отправить сообщение или отменить его сейчас и повторить попытку позже, когда %2$s подтвердит все свои устройства."</string>
+  <string name="screen_resolve_send_failure_unsigned_device_title">"Ваше сообщение не было отправлено, потому что %1$s имеет неподтверждённые устройства"</string>
+  <string name="screen_resolve_send_failure_you_unsigned_device_subtitle">"Одно или несколько ваших устройств не подтверждены. Вы можете отправить сообщение в любом случае или отменить его сейчас и повторить попытку позже, подтвердив все свои устройства."</string>
   <string name="screen_resolve_send_failure_you_unsigned_device_title">"Ваше сообщение не было отправлено, поскольку вы не подтвердили одно или несколько своих устройств."</string>
   <string name="screen_room_change_role_administrators_or_owners_title">"Редактировать владельцев и администраторов"</string>
   <string name="screen_room_error_failed_processing_media">"Не удалось обработать медиафайл для загрузки, попробуйте еще раз."</string>
@@ -530,7 +530,7 @@
   <string name="screen_space_list_title">"Пространства"</string>
   <string name="screen_static_location_sheet_timestamp_description">"Поделился %1$s"</string>
   <string name="screen_static_location_sheet_title">"На карте"</string>
-  <string name="screen_timeline_item_menu_send_failure_changed_identity">"Сообщение не отправлено, так как подтвержденная цифровая идентичность %1$s была сброшена."</string>
+  <string name="screen_timeline_item_menu_send_failure_changed_identity">"Сообщение не отправлено, так как подтверждённая цифровая идентичность %1$s была сброшена."</string>
   <string name="screen_timeline_item_menu_send_failure_unsigned_device">"Сообщение не отправлено, потому что %1$s не подтвердил(а) все свои устройства."</string>
   <string name="screen_timeline_item_menu_send_failure_you_unsigned_device">"Сообщение не отправлено, поскольку вы не подтвердили одно или несколько своих устройств."</string>
   <string name="screen_view_location_title">"Местоположение"</string>
@@ -541,4 +541,5 @@
   <string name="timeline_decryption_failure_historical_event_user_not_joined">"Вы не имеете доступа к этому сообщению"</string>
   <string name="timeline_decryption_failure_unable_to_decrypt">"Не удалось расшифровать сообщение"</string>
   <string name="timeline_decryption_failure_withheld_unverified">"Это сообщение было заблокировано либо потому, что вы не подтвердили свое устройство, либо потому, что отправителю необходимо подтвердить вашу цифровую личность."</string>
+  <string name="common_black">"Чёрный"</string>
 </resources>

@@ -42,11 +42,13 @@ class PasswordResetPresenter(
     override fun present(): PasswordResetState {
         val localCoroutineScope = rememberCoroutineScope()
         val resetAction = remember { mutableStateOf<AsyncData<Unit>>(AsyncData.Uninitialized) }
+        val step = rememberSaveable { mutableStateOf(PasswordResetStep.Email) }
         val pendingPasswordReset = remember { mutableStateOf<PendingPasswordReset?>(null) }
         val formState = rememberSaveable {
             mutableStateOf(
                 PasswordResetFormState(
                     email = initialEmail,
+                    verificationCode = "",
                     newPassword = "",
                     confirmPassword = "",
                 )
@@ -58,34 +60,90 @@ class PasswordResetPresenter(
             when (event) {
                 PasswordResetEvents.ClearError -> resetAction.value = AsyncData.Uninitialized
                 PasswordResetEvents.ClearSuccess -> resetAction.value = AsyncData.Uninitialized
-                PasswordResetEvents.ConfirmEmailVerified -> {
-                    localCoroutineScope.continueReset(
-                        pendingPasswordReset = pendingPasswordReset,
-                        resetAction = resetAction,
-                    )
-                }
                 PasswordResetEvents.ResendEmail -> {
                     localCoroutineScope.resendEmail(
                         pendingPasswordReset = pendingPasswordReset,
                         resetAction = resetAction,
                     )
                 }
+                PasswordResetEvents.GoBack -> {
+                    when (step.value) {
+                        PasswordResetStep.Email -> Unit
+                        PasswordResetStep.Code -> {
+                            step.value = PasswordResetStep.Email
+                            updateFormState(formState) {
+                                copy(verificationCode = "")
+                            }
+                        }
+                        PasswordResetStep.Credentials -> {
+                            step.value = PasswordResetStep.Code
+                        }
+                    }
+                }
                 is PasswordResetEvents.SetConfirmPassword -> updateFormState(formState) {
                     copy(confirmPassword = event.confirmPassword)
                 }
-                is PasswordResetEvents.SetEmail -> updateFormState(formState) {
-                    copy(email = event.email)
+                is PasswordResetEvents.SetEmail -> {
+                    val sanitized = event.email.trim()
+                    val previousEmail = formState.value.email.trim()
+                    updateFormState(formState) {
+                        copy(email = sanitized)
+                    }
+                    if (pendingPasswordReset.value != null && sanitized != previousEmail) {
+                        pendingPasswordReset.value = null
+                        step.value = PasswordResetStep.Email
+                        updateFormState(formState) {
+                            copy(
+                                verificationCode = "",
+                                newPassword = "",
+                                confirmPassword = "",
+                            )
+                        }
+                    }
+                }
+                is PasswordResetEvents.SetVerificationCode -> updateFormState(formState) {
+                    copy(verificationCode = event.verificationCode)
                 }
                 is PasswordResetEvents.SetNewPassword -> updateFormState(formState) {
                     copy(newPassword = event.newPassword)
                 }
                 PasswordResetEvents.Submit -> {
-                    localCoroutineScope.startReset(
-                        homeserverUrl = accountProvider.url,
-                        formState = formState.value,
-                        pendingPasswordReset = pendingPasswordReset,
-                        resetAction = resetAction,
-                    )
+                    when (step.value) {
+                        PasswordResetStep.Email -> {
+                            val currentEmail = formState.value.email.trim()
+                            val currentPendingPasswordReset = pendingPasswordReset.value
+                            if (currentPendingPasswordReset != null && currentPendingPasswordReset.email == currentEmail) {
+                                step.value = PasswordResetStep.Code
+                                updateFormState(formState) {
+                                    copy(verificationCode = "")
+                                }
+                            } else {
+                                localCoroutineScope.startReset(
+                                    homeserverUrl = accountProvider.url,
+                                    email = currentEmail,
+                                    pendingPasswordReset = pendingPasswordReset,
+                                    resetAction = resetAction,
+                                    step = step,
+                                    formState = formState,
+                                )
+                            }
+                        }
+                        PasswordResetStep.Code -> {
+                            localCoroutineScope.submitResetCode(
+                                pendingPasswordReset = pendingPasswordReset,
+                                formState = formState,
+                                resetAction = resetAction,
+                                step = step,
+                            )
+                        }
+                        PasswordResetStep.Credentials -> {
+                            localCoroutineScope.finishReset(
+                                pendingPasswordReset = pendingPasswordReset,
+                                formState = formState,
+                                resetAction = resetAction,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -93,6 +151,7 @@ class PasswordResetPresenter(
         return PasswordResetState(
             accountProvider = accountProvider,
             formState = formState.value,
+            step = step.value,
             resetAction = resetAction.value,
             pendingPasswordReset = pendingPasswordReset.value,
             eventSink = ::handleEvent,
@@ -101,36 +160,59 @@ class PasswordResetPresenter(
 
     private fun CoroutineScope.startReset(
         homeserverUrl: String,
-        formState: PasswordResetFormState,
+        email: String,
         pendingPasswordReset: MutableState<PendingPasswordReset?>,
         resetAction: MutableState<AsyncData<Unit>>,
+        step: MutableState<PasswordResetStep>,
+        formState: MutableState<PasswordResetFormState>,
     ) = launch {
         resetAction.value = AsyncData.Loading()
         pendingPasswordReset.value = null
-        if (formState.newPassword != formState.confirmPassword) {
-            resetAction.value = AsyncData.Failure(PasswordResetValidationException.PasswordMismatch)
-            return@launch
-        }
         nativeAuthService.startPasswordReset(
             homeserverUrl = homeserverUrl,
-            email = formState.email.trim(),
-            newPassword = formState.newPassword,
+            email = email,
         ).onSuccess { result ->
-            handleResetResult(result, pendingPasswordReset, resetAction)
+            when (result) {
+                is PasswordResetResult.AwaitingEmailVerification -> {
+                    pendingPasswordReset.value = result.pendingPasswordReset
+                    step.value = PasswordResetStep.Code
+                    updateFormState(formState) {
+                        copy(verificationCode = "")
+                    }
+                    resetAction.value = AsyncData.Uninitialized
+                }
+                else -> {
+                    resetAction.value = AsyncData.Failure(IllegalStateException("Unexpected password reset state"))
+                }
+            }
         }.onFailure { failure ->
             resetAction.value = AsyncData.Failure(failure)
         }
     }
 
-    private fun CoroutineScope.continueReset(
+    private fun CoroutineScope.submitResetCode(
         pendingPasswordReset: MutableState<PendingPasswordReset?>,
+        formState: MutableState<PasswordResetFormState>,
         resetAction: MutableState<AsyncData<Unit>>,
+        step: MutableState<PasswordResetStep>,
     ) = launch {
         val currentPendingPasswordReset = pendingPasswordReset.value ?: return@launch
         resetAction.value = AsyncData.Loading()
-        nativeAuthService.continuePasswordReset(currentPendingPasswordReset)
+        nativeAuthService.submitPasswordResetEmailCode(
+            pendingPasswordReset = currentPendingPasswordReset,
+            verificationCode = formState.value.verificationCode.trim(),
+        )
             .onSuccess { result ->
-                handleResetResult(result, pendingPasswordReset, resetAction)
+                when (result) {
+                    is PasswordResetResult.AwaitingCredentials -> {
+                        pendingPasswordReset.value = result.pendingPasswordReset
+                        step.value = PasswordResetStep.Credentials
+                        resetAction.value = AsyncData.Uninitialized
+                    }
+                    else -> {
+                        resetAction.value = AsyncData.Failure(IllegalStateException("Unexpected password reset state"))
+                    }
+                }
             }
             .onFailure { failure ->
                 resetAction.value = AsyncData.Failure(failure)
@@ -153,20 +235,32 @@ class PasswordResetPresenter(
             }
     }
 
-    private fun handleResetResult(
-        result: PasswordResetResult,
+    private fun CoroutineScope.finishReset(
         pendingPasswordReset: MutableState<PendingPasswordReset?>,
+        formState: MutableState<PasswordResetFormState>,
         resetAction: MutableState<AsyncData<Unit>>,
-    ) {
-        when (result) {
-            is PasswordResetResult.AwaitingEmailVerification -> {
-                pendingPasswordReset.value = result.pendingPasswordReset
-                resetAction.value = AsyncData.Uninitialized
+    ) = launch {
+        val currentPendingPasswordReset = pendingPasswordReset.value ?: return@launch
+        resetAction.value = AsyncData.Loading()
+        if (formState.value.newPassword != formState.value.confirmPassword) {
+            resetAction.value = AsyncData.Failure(PasswordResetValidationException.PasswordMismatch)
+            return@launch
+        }
+        nativeAuthService.continuePasswordReset(
+            pendingPasswordReset = currentPendingPasswordReset,
+            newPassword = formState.value.newPassword,
+        ).onSuccess { result ->
+            when (result) {
+                PasswordResetResult.Success -> {
+                    pendingPasswordReset.value = null
+                    resetAction.value = AsyncData.Success(Unit)
+                }
+                else -> {
+                    resetAction.value = AsyncData.Failure(IllegalStateException("Unexpected password reset state"))
+                }
             }
-            PasswordResetResult.Success -> {
-                pendingPasswordReset.value = null
-                resetAction.value = AsyncData.Success(Unit)
-            }
+        }.onFailure { failure ->
+            resetAction.value = AsyncData.Failure(failure)
         }
     }
 

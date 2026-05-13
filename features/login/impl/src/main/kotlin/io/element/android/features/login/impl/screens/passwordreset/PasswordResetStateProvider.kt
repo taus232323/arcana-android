@@ -18,11 +18,29 @@ open class PasswordResetStateProvider : PreviewParameterProvider<PasswordResetSt
     override val values: Sequence<PasswordResetState>
         get() = sequenceOf(
             aPasswordResetState(),
-            aPasswordResetState(resetAction = AsyncData.Loading()),
             aPasswordResetState(
+                step = PasswordResetStep.Email,
+                formState = aPasswordResetFormState(email = "alice@example.com"),
+            ),
+            aPasswordResetState(
+                step = PasswordResetStep.Email,
+                resetAction = AsyncData.Loading(),
+                formState = aPasswordResetFormState(email = "alice@example.com"),
+            ),
+            aPasswordResetState(
+                step = PasswordResetStep.Code,
                 pendingPasswordReset = aPendingPasswordReset(),
                 formState = aPasswordResetFormState(
                     email = "alice@example.com",
+                    verificationCode = "123456",
+                ),
+            ),
+            aPasswordResetState(
+                step = PasswordResetStep.Credentials,
+                pendingPasswordReset = aPendingPasswordReset(),
+                formState = aPasswordResetFormState(
+                    email = "alice@example.com",
+                    verificationCode = "123456",
                     newPassword = "password123",
                     confirmPassword = "password123",
                 ),
@@ -35,12 +53,14 @@ open class PasswordResetStateProvider : PreviewParameterProvider<PasswordResetSt
 fun aPasswordResetState(
     accountProvider: AccountProvider = anAccountProvider(),
     formState: PasswordResetFormState = PasswordResetFormState.Default,
+    step: PasswordResetStep = PasswordResetStep.Email,
     resetAction: AsyncData<Unit> = AsyncData.Uninitialized,
     pendingPasswordReset: PendingPasswordReset? = null,
     eventSink: (PasswordResetEvents) -> Unit = {},
 ) = PasswordResetState(
     accountProvider = accountProvider,
     formState = formState,
+    step = step,
     resetAction = resetAction,
     pendingPasswordReset = pendingPasswordReset,
     eventSink = eventSink,
@@ -48,10 +68,12 @@ fun aPasswordResetState(
 
 fun aPasswordResetFormState(
     email: String = "",
+    verificationCode: String = "",
     newPassword: String = "",
     confirmPassword: String = "",
 ) = PasswordResetFormState(
     email = email,
+    verificationCode = verificationCode,
     newPassword = newPassword,
     confirmPassword = confirmPassword,
 )
@@ -59,7 +81,6 @@ fun aPasswordResetFormState(
 fun aPendingPasswordReset() = PendingPasswordReset(
     homeserverUrl = "https://matrix.celesteai.ru",
     email = "alice@example.com",
-    newPassword = "password123",
     clientSecret = "secret",
     sendAttempt = 1,
     sid = "sid",

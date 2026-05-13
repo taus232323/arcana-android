@@ -16,29 +16,43 @@ import kotlinx.parcelize.Parcelize
 data class PasswordResetState(
     val accountProvider: AccountProvider,
     val formState: PasswordResetFormState,
+    val step: PasswordResetStep,
     val resetAction: AsyncData<Unit>,
     val pendingPasswordReset: PendingPasswordReset?,
     val eventSink: (PasswordResetEvents) -> Unit,
 ) {
     val submitEnabled: Boolean
         get() = resetAction !is AsyncData.Loading &&
-            formState.email.isNotBlank() &&
-            formState.newPassword.isNotBlank() &&
-            formState.confirmPassword.isNotBlank()
+            when (step) {
+                PasswordResetStep.Email -> formState.email.isNotBlank()
+                PasswordResetStep.Code -> formState.verificationCode.isNotBlank()
+                PasswordResetStep.Credentials -> formState.newPassword.isNotBlank() && formState.confirmPassword.isNotBlank()
+            }
 
     val isAwaitingEmailVerification: Boolean
-        get() = pendingPasswordReset != null
+        get() = step == PasswordResetStep.Code
+
+    val isAwaitingCredentials: Boolean
+        get() = step == PasswordResetStep.Credentials
+}
+
+enum class PasswordResetStep {
+    Email,
+    Code,
+    Credentials,
 }
 
 @Parcelize
 data class PasswordResetFormState(
     val email: String,
+    val verificationCode: String,
     val newPassword: String,
     val confirmPassword: String,
 ) : Parcelable {
     companion object {
         val Default = PasswordResetFormState(
             email = "",
+            verificationCode = "",
             newPassword = "",
             confirmPassword = "",
         )

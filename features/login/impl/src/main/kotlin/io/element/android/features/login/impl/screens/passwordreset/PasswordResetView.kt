@@ -78,7 +78,11 @@ fun PasswordResetView(
     val autofillManager = LocalAutofillManager.current
     BackHandler {
         autofillManager?.cancel()
-        onBackClick()
+        if (state.step == PasswordResetStep.Email) {
+            onBackClick()
+        } else {
+            state.eventSink(PasswordResetEvents.GoBack)
+        }
     }
 
     val isLoading by remember(state.resetAction) {
@@ -100,7 +104,11 @@ fun PasswordResetView(
                 navigationIcon = {
                     BackButton(onClick = {
                         autofillManager?.cancel()
-                        onBackClick()
+                        if (state.step == PasswordResetStep.Email) {
+                            onBackClick()
+                        } else {
+                            state.eventSink(PasswordResetEvents.GoBack)
+                        }
                     })
                 },
             )
@@ -118,59 +126,75 @@ fun PasswordResetView(
             IconTitleSubtitleMolecule(
                 modifier = Modifier.padding(top = 20.dp, start = 16.dp, end = 16.dp),
                 iconStyle = BigIcon.Style.Default(CompoundIcons.UserProfileSolid()),
-                title = stringResource(R.string.screen_password_reset_title),
-                subTitle = if (state.isAwaitingEmailVerification) {
-                    stringResource(R.string.screen_password_reset_email_verification_subtitle, state.formState.email)
-                } else {
-                    stringResource(R.string.screen_password_reset_subtitle, state.accountProvider.title)
+                title = when (state.step) {
+                    PasswordResetStep.Email -> stringResource(R.string.screen_password_reset_email_step_title)
+                    PasswordResetStep.Code -> stringResource(R.string.screen_password_reset_code_step_title)
+                    PasswordResetStep.Credentials -> stringResource(R.string.screen_password_reset_credentials_step_title)
+                },
+                subTitle = when (state.step) {
+                    PasswordResetStep.Email -> stringResource(R.string.screen_password_reset_email_step_subtitle, state.accountProvider.title)
+                    PasswordResetStep.Code -> stringResource(R.string.screen_password_reset_code_step_subtitle, state.formState.email)
+                    PasswordResetStep.Credentials -> stringResource(R.string.screen_password_reset_credentials_step_subtitle, state.accountProvider.title)
                 },
             )
             Spacer(Modifier.height(32.dp))
-            if (state.isAwaitingEmailVerification) {
-                Text(
-                    text = stringResource(R.string.screen_password_reset_email_verification_title, state.formState.email),
-                    style = ElementTheme.typography.fontBodyLgRegular,
-                    color = ElementTheme.colors.textPrimary,
+
+            when (state.step) {
+                PasswordResetStep.Email -> EmailStepContent(
+                    state = state,
+                    isLoading = isLoading,
+                    onSubmit = ::submit,
                 )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.screen_password_reset_email_verification_hint),
-                    style = ElementTheme.typography.fontBodyMdRegular,
-                    color = ElementTheme.colors.textSecondary,
+                PasswordResetStep.Code -> CodeStepContent(
+                    state = state,
+                    isLoading = isLoading,
+                    onSubmit = ::submit,
                 )
-            } else {
-                PasswordResetForm(
+                PasswordResetStep.Credentials -> CredentialsStepContent(
                     state = state,
                     isLoading = isLoading,
                     onSubmit = ::submit,
                 )
             }
+
             Spacer(Modifier.height(24.dp))
             Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                 ButtonColumnMolecule {
-                    if (state.isAwaitingEmailVerification) {
-                        Button(
-                            text = stringResource(R.string.screen_password_reset_action_continue_after_email),
-                            showProgress = isLoading,
-                            onClick = { state.eventSink(PasswordResetEvents.ConfirmEmailVerified) },
-                            enabled = !isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        TextButton(
-                            text = stringResource(R.string.screen_password_reset_action_resend_email),
-                            onClick = { state.eventSink(PasswordResetEvents.ResendEmail) },
-                            enabled = !isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    } else {
-                        Button(
-                            text = stringResource(CommonStrings.action_continue),
-                            showProgress = isLoading,
-                            onClick = ::submit,
-                            enabled = state.submitEnabled || isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    when (state.step) {
+                        PasswordResetStep.Email -> {
+                            Button(
+                                text = stringResource(CommonStrings.action_continue),
+                                showProgress = isLoading,
+                                onClick = ::submit,
+                                enabled = state.submitEnabled || isLoading,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        PasswordResetStep.Code -> {
+                            Button(
+                                text = stringResource(CommonStrings.action_confirm),
+                                showProgress = isLoading,
+                                onClick = ::submit,
+                                enabled = state.submitEnabled || isLoading,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            TextButton(
+                                text = stringResource(R.string.screen_password_reset_action_resend_email),
+                                onClick = { state.eventSink(PasswordResetEvents.ResendEmail) },
+                                enabled = !isLoading,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        PasswordResetStep.Credentials -> {
+                            Button(
+                                text = stringResource(R.string.screen_password_reset_action_update_password),
+                                showProgress = isLoading,
+                                onClick = ::submit,
+                                enabled = state.submitEnabled || isLoading,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(48.dp))
                 }
@@ -203,17 +227,21 @@ fun PasswordResetView(
 }
 
 @Composable
-private fun PasswordResetForm(
+private fun EmailStepContent(
     state: PasswordResetState,
     isLoading: Boolean,
     onSubmit: () -> Unit,
 ) {
     var emailFieldState by textFieldState(stateValue = state.formState.email)
-    var passwordFieldState by textFieldState(stateValue = state.formState.newPassword)
-    var confirmPasswordFieldState by textFieldState(stateValue = state.formState.confirmPassword)
     val focusManager = LocalFocusManager.current
 
     Column {
+        Text(
+            text = stringResource(R.string.screen_password_reset_email_step_body),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
+        )
+        Spacer(Modifier.height(16.dp))
         TextField(
             label = stringResource(R.string.screen_native_registration_email_label),
             value = emailFieldState,
@@ -228,9 +256,70 @@ private fun PasswordResetForm(
                 emailFieldState = sanitized
                 state.eventSink(PasswordResetEvents.SetEmail(sanitized))
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
             singleLine = true,
+        )
+    }
+}
+
+@Composable
+private fun CodeStepContent(
+    state: PasswordResetState,
+    isLoading: Boolean,
+    onSubmit: () -> Unit,
+) {
+    var verificationCodeFieldState by textFieldState(stateValue = state.formState.verificationCode)
+    val focusManager = LocalFocusManager.current
+
+    Column {
+        Text(
+            text = stringResource(R.string.screen_password_reset_code_step_body, state.formState.email),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textPrimary,
+        )
+        Spacer(Modifier.height(16.dp))
+        TextField(
+            label = stringResource(R.string.screen_login_verification_code_label),
+            value = verificationCodeFieldState,
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onTabOrEnterKeyFocusNext(focusManager),
+            placeholder = stringResource(R.string.screen_login_verification_code_label),
+            onValueChange = {
+                val sanitized = it.sanitize()
+                verificationCodeFieldState = sanitized
+                state.eventSink(PasswordResetEvents.SetVerificationCode(sanitized))
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+            singleLine = true,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.screen_password_reset_code_step_hint),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
+        )
+    }
+}
+
+@Composable
+private fun CredentialsStepContent(
+    state: PasswordResetState,
+    isLoading: Boolean,
+    onSubmit: () -> Unit,
+) {
+    var passwordFieldState by textFieldState(stateValue = state.formState.newPassword)
+    var confirmPasswordFieldState by textFieldState(stateValue = state.formState.confirmPassword)
+    val focusManager = LocalFocusManager.current
+
+    Column {
+        Text(
+            text = stringResource(R.string.screen_password_reset_credentials_step_body),
+            style = ElementTheme.typography.fontBodyMdRegular,
+            color = ElementTheme.colors.textSecondary,
         )
         Spacer(Modifier.height(16.dp))
         ResetPasswordField(
@@ -300,11 +389,13 @@ private fun ResetPasswordField(
 
 private fun passwordResetError(error: Throwable): Int {
     return when (error) {
-        PasswordResetValidationException.PasswordMismatch -> R.string.screen_native_registration_error_password_mismatch
-        NativeAuthException.InvalidEmail -> R.string.screen_native_registration_error_invalid_email
-        is NativeAuthException.RateLimited -> R.string.screen_native_registration_error_rate_limited
-        is NativeAuthException.UnsupportedAuthenticationFlow -> R.string.screen_native_registration_error_unsupported_flow
-        else -> R.string.screen_native_registration_error_unknown
+        NativeAuthException.EmailRequired -> R.string.screen_password_reset_error_email_required
+        PasswordResetValidationException.PasswordMismatch -> R.string.screen_password_reset_error_password_mismatch
+        NativeAuthException.InvalidEmail -> R.string.screen_password_reset_error_invalid_email
+        NativeAuthException.InvalidVerificationCode -> R.string.screen_password_reset_error_invalid_code
+        is NativeAuthException.RateLimited -> R.string.screen_password_reset_error_rate_limited
+        is NativeAuthException.UnsupportedAuthenticationFlow -> R.string.screen_password_reset_error_unsupported_flow
+        else -> R.string.screen_password_reset_error_unknown
     }
 }
 
