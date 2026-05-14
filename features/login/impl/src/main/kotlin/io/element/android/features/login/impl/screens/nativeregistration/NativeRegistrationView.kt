@@ -26,28 +26,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentType
-import androidx.compose.ui.semantics.contentDataType
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.login.impl.R
+import io.element.android.features.login.impl.components.PasswordTextField
+import io.element.android.features.login.impl.components.VerificationCodeTextField
+import io.element.android.features.login.impl.components.SanitizedTextField
 import io.element.android.features.login.impl.nativeauth.NativeAuthException
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.atomic.molecules.ButtonColumnMolecule
@@ -60,11 +56,9 @@ import io.element.android.libraries.designsystem.modifiers.onTabOrEnterKeyFocusN
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.theme.components.Button
-import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.Scaffold
 import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TextButton
-import io.element.android.libraries.designsystem.theme.components.TextField
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.ui.strings.CommonStrings
 
@@ -212,23 +206,21 @@ private fun EmailStepContent(
             color = ElementTheme.colors.textSecondary,
         )
         Spacer(Modifier.height(16.dp))
-        TextField(
+        SanitizedTextField(
             label = stringResource(R.string.screen_native_registration_email_label),
             value = emailFieldState,
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .onTabOrEnterKeyFocusNext(focusManager)
-                .semantics { contentType = ContentType.EmailAddress },
-            placeholder = stringResource(R.string.screen_native_registration_email_label),
+                .onTabOrEnterKeyFocusNext(focusManager),
+            contentType = ContentType.EmailAddress,
             onValueChange = {
-                val sanitized = it.sanitize()
-                emailFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetEmail(sanitized))
+                emailFieldState = it
+                state.eventSink(NativeRegistrationEvents.SetEmail(it))
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
-            singleLine = true,
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Done,
+            onImeAction = onSubmit,
         )
     }
 }
@@ -249,41 +241,20 @@ private fun CodeStepContent(
             color = ElementTheme.colors.textPrimary,
         )
         Spacer(Modifier.height(16.dp))
-        TextField(
-            label = stringResource(R.string.screen_login_verification_code_label),
+        VerificationCodeTextField(
             value = verificationCodeFieldState,
+            label = stringResource(R.string.screen_login_verification_code_label),
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .onTabOrEnterKeyFocusNext(focusManager)
-                .semantics {
-                    contentDataType = ContentDataType.None
-                },
-            placeholder = stringResource(R.string.screen_login_verification_code_label),
+                .onTabOrEnterKeyFocusNext(focusManager),
             onValueChange = {
-                val sanitized = it.sanitize()
-                verificationCodeFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetVerificationCode(sanitized))
+                verificationCodeFieldState = it
+                state.eventSink(NativeRegistrationEvents.SetVerificationCode(it))
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
-            singleLine = true,
-            trailingIcon = if (verificationCodeFieldState.isNotEmpty()) {
-                {
-                    Box(Modifier.clickable {
-                        verificationCodeFieldState = ""
-                        state.eventSink(NativeRegistrationEvents.SetVerificationCode(""))
-                    }) {
-                        Icon(
-                            imageVector = CompoundIcons.Close(),
-                            contentDescription = stringResource(CommonStrings.action_clear),
-                            tint = ElementTheme.colors.iconSecondary,
-                        )
-                    }
-                }
-            } else {
-                null
-            },
+            imeAction = ImeAction.Done,
+            onImeAction = onSubmit,
+            showClearButton = true,
         )
     }
 }
@@ -305,74 +276,35 @@ private fun CredentialsStepContent(
             color = ElementTheme.colors.textSecondary,
         )
         Spacer(Modifier.height(16.dp))
-        TextField(
+        SanitizedTextField(
             label = stringResource(R.string.screen_native_registration_username_label),
             value = usernameFieldState,
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .onTabOrEnterKeyFocusNext(focusManager)
-                .semantics { contentType = ContentType.Username },
-            placeholder = stringResource(CommonStrings.common_username),
+                .onTabOrEnterKeyFocusNext(focusManager),
+            contentType = ContentType.Username,
             onValueChange = {
-                val sanitized = it.sanitize()
-                usernameFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetUsername(sanitized))
+                usernameFieldState = it
+                state.eventSink(NativeRegistrationEvents.SetUsername(it))
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-            singleLine = true,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next,
+            onImeAction = { focusManager.moveFocus(FocusDirection.Down) },
         )
         Spacer(Modifier.height(16.dp))
-        PasswordField(
+        PasswordTextField(
             value = passwordFieldState,
             label = stringResource(CommonStrings.common_password),
             enabled = !isLoading,
             onValueChange = {
-                val sanitized = it.sanitize()
-                passwordFieldState = sanitized
-                state.eventSink(NativeRegistrationEvents.SetPassword(sanitized))
+                passwordFieldState = it
+                state.eventSink(NativeRegistrationEvents.SetPassword(it))
             },
             imeAction = ImeAction.Done,
             onImeAction = onSubmit,
         )
     }
-}
-
-@Composable
-private fun PasswordField(
-    value: String,
-    label: String,
-    enabled: Boolean,
-    onValueChange: (String) -> Unit,
-    imeAction: ImeAction,
-    onImeAction: () -> Unit,
-) {
-    var passwordVisible by remember { mutableStateOf(false) }
-    TextField(
-        value = value,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics { contentType = ContentType.Password },
-        label = label,
-        onValueChange = onValueChange,
-        placeholder = label,
-        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = {
-            val image = if (passwordVisible) CompoundIcons.VisibilityOn() else CompoundIcons.VisibilityOff()
-            val description = if (passwordVisible) stringResource(CommonStrings.a11y_hide_password) else stringResource(CommonStrings.a11y_show_password)
-            Box(Modifier.clickable { passwordVisible = !passwordVisible }) {
-                Icon(
-                    imageVector = image,
-                    contentDescription = description,
-                )
-            }
-        },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = imeAction),
-        keyboardActions = KeyboardActions(onDone = { onImeAction() }, onNext = { onImeAction() }),
-        singleLine = true,
-    )
 }
 
 private fun nativeRegistrationError(error: Throwable): Int {
@@ -392,8 +324,6 @@ private fun nativeRegistrationError(error: Throwable): Int {
         else -> R.string.screen_native_registration_error_unknown
     }
 }
-
-private fun String.sanitize(): String = replace("\n", "")
 
 @PreviewsDayNight
 @Composable

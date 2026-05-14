@@ -46,7 +46,7 @@ fun PinEntryTextField(
         onValueChange = {
             onValueChange(it)
         },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         decorationBox = {
             PinEntryRow(pinEntry = pinEntry, isSecured = isSecured)
         }

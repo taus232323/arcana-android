@@ -30,7 +30,7 @@ internal interface MatrixNativeAuthAPI {
         @Body body: RegistrationEmailSubmitRequest,
     ): Response<EmailRequestTokenResponse>
 
-    @POST("/_matrix/client/v3/account/password")
+    @POST("/_matrix/client/v3/account/password/email/reset")
     suspend fun resetPassword(
         @Body body: ResetPasswordRequest,
     ): Response<Unit>
@@ -76,11 +76,12 @@ internal data class RegisterRequest(
 
 @Serializable
 internal data class ResetPasswordRequest(
-    @SerialName("new_password")
-    val newPassword: String,
+    val password: String,
+    @SerialName("client_secret")
+    val clientSecret: String,
+    val sid: String,
     @SerialName("logout_devices")
-    val logoutDevices: Boolean = false,
-    val auth: AuthRequest? = null,
+    val logoutDevices: Boolean,
 )
 
 @Serializable

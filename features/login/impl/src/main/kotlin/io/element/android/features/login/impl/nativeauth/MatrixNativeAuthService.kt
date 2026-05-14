@@ -250,15 +250,10 @@ class DefaultMatrixNativeAuthService(
     ): Result<PasswordResetResult> = runCatchingExceptions {
         val response = api(pendingPasswordReset.homeserverUrl).resetPassword(
             ResetPasswordRequest(
-                newPassword = newPassword,
-                auth = AuthRequest(
-                    type = EMAIL_IDENTITY_STAGE,
-                    session = pendingPasswordReset.session,
-                    threePidCreds = ThreePidCredentials(
-                        clientSecret = pendingPasswordReset.clientSecret,
-                        sid = requireNotNull(pendingPasswordReset.sid),
-                    ),
-                ),
+                password = newPassword,
+                clientSecret = pendingPasswordReset.clientSecret,
+                sid = requireNotNull(pendingPasswordReset.sid),
+                logoutDevices = false,
             )
         )
         if (response.isSuccessful) {
