@@ -309,14 +309,7 @@ class DefaultMatrixNativeAuthService(
             sid = null,
             email = null,
         )
-        val response = api(baseUrl).requestEmailLoginVerification(
-            EmailLoginRequest(
-                clientSecret = pendingEmailLogin.clientSecret,
-                login = pendingEmailLogin.login,
-                password = pendingEmailLogin.password,
-                sendAttempt = pendingEmailLogin.sendAttempt + 1,
-            )
-        )
+        val response = requestEmailLoginVerification(pendingEmailLogin)
         if (response.isSuccessful) {
             val body = requireNotNull(response.body())
             EmailLoginResult.AwaitingEmailVerification(
@@ -362,14 +355,7 @@ class DefaultMatrixNativeAuthService(
         pendingEmailLogin: PendingEmailLogin,
     ): Result<PendingEmailLogin> = runCatchingExceptions {
         val updated = pendingEmailLogin.copy(sendAttempt = pendingEmailLogin.sendAttempt + 1)
-        val response = api(updated.homeserverUrl).requestEmailLoginVerification(
-            EmailLoginRequest(
-                clientSecret = updated.clientSecret,
-                login = updated.login,
-                password = updated.password,
-                sendAttempt = updated.sendAttempt,
-            )
-        )
+        val response = requestEmailLoginVerification(updated, updated.sendAttempt)
         if (response.isSuccessful) {
             updated.copy(
                 sid = requireNotNull(response.body()).sid,
@@ -378,6 +364,20 @@ class DefaultMatrixNativeAuthService(
         } else {
             throw parseError(response.errorBody())
         }
+    }
+
+    private suspend fun requestEmailLoginVerification(
+        pendingEmailLogin: PendingEmailLogin,
+        sendAttempt: Int = pendingEmailLogin.sendAttempt + 1,
+    ): Response<EmailLoginStartResponse> {
+        return api(pendingEmailLogin.homeserverUrl).requestEmailLoginVerification(
+            EmailLoginRequest(
+                clientSecret = pendingEmailLogin.clientSecret,
+                login = pendingEmailLogin.login,
+                password = pendingEmailLogin.password,
+                sendAttempt = sendAttempt,
+            )
+        )
     }
 
     private fun LoginResponse.toExternalSession(fallbackUrl: String): ExternalSession {

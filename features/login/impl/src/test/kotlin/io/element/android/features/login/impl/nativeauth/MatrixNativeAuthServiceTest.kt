@@ -20,6 +20,77 @@ import org.junit.Test
 
 class MatrixNativeAuthServiceTest {
     @Test
+    fun `start email login sends user identifier for username`() = runTest {
+        val server = MockWebServer()
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"sid":"sid","email":"alice@example.com"}""")
+        )
+        server.start()
+
+        try {
+            val service = createService()
+
+            val result = service.startEmailLogin(
+                homeserverUrl = server.url("/").toString(),
+                login = "alice",
+                password = "password",
+            )
+
+            val request = server.takeRequest()
+            assertThat(request.method).isEqualTo("POST")
+            assertThat(request.path).isEqualTo("/_matrix/client/v3/login")
+            val body = request.body.readUtf8()
+            assertThat(body).contains("\"login\":\"alice\"")
+            assertThat(body).contains("\"identifier\":")
+            assertThat(body).contains("\"type\":\"m.id.user\"")
+            assertThat(body).contains("\"user\":\"alice\"")
+            assertThat(body).contains("\"password\":\"password\"")
+            assertThat(body).contains("\"send_attempt\":1")
+            assertThat(result.isSuccess).isTrue()
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun `start email login sends third-party identifier for email`() = runTest {
+        val server = MockWebServer()
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"sid":"sid","email":"alice@example.com"}""")
+        )
+        server.start()
+
+        try {
+            val service = createService()
+
+            val result = service.startEmailLogin(
+                homeserverUrl = server.url("/").toString(),
+                login = "alice@example.com",
+                password = "password",
+            )
+
+            val request = server.takeRequest()
+            assertThat(request.method).isEqualTo("POST")
+            assertThat(request.path).isEqualTo("/_matrix/client/v3/login")
+            val body = request.body.readUtf8()
+            assertThat(body).contains("\"login\":\"alice@example.com\"")
+            assertThat(body).contains("\"identifier\":")
+            assertThat(body).contains("\"type\":\"m.id.thirdparty\"")
+            assertThat(body).contains("\"medium\":\"email\"")
+            assertThat(body).contains("\"address\":\"alice@example.com\"")
+            assertThat(body).contains("\"password\":\"password\"")
+            assertThat(body).contains("\"send_attempt\":1")
+            assertThat(result.isSuccess).isTrue()
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
     fun `start password reset requests email token`() = runTest {
         val server = MockWebServer()
         server.enqueue(
@@ -30,18 +101,7 @@ class MatrixNativeAuthServiceTest {
         server.start()
 
         try {
-            val jsonProvider = DefaultJsonProvider()
-            val service = DefaultMatrixNativeAuthService(
-                retrofitFactory = RetrofitFactory(
-                    okHttpClient = object : Provider<OkHttpClient> {
-                        override fun invoke(): OkHttpClient = OkHttpClient()
-                    },
-                    json = object : Provider<JsonProvider> {
-                        override fun invoke(): JsonProvider = jsonProvider
-                    },
-                ),
-                jsonProvider = jsonProvider,
-            )
+            val service = createService()
 
             val result = service.startPasswordReset(
                 homeserverUrl = server.url("/").toString(),
@@ -75,18 +135,7 @@ class MatrixNativeAuthServiceTest {
         server.start()
 
         try {
-            val jsonProvider = DefaultJsonProvider()
-            val service = DefaultMatrixNativeAuthService(
-                retrofitFactory = RetrofitFactory(
-                    okHttpClient = object : Provider<OkHttpClient> {
-                        override fun invoke(): OkHttpClient = OkHttpClient()
-                    },
-                    json = object : Provider<JsonProvider> {
-                        override fun invoke(): JsonProvider = jsonProvider
-                    },
-                ),
-                jsonProvider = jsonProvider,
-            )
+            val service = createService()
             val pendingPasswordReset = PendingPasswordReset(
                 homeserverUrl = server.url("/").toString(),
                 email = "alice@example.com",
@@ -114,5 +163,20 @@ class MatrixNativeAuthServiceTest {
         } finally {
             server.shutdown()
         }
+    }
+
+    private fun createService(): DefaultMatrixNativeAuthService {
+        val jsonProvider = DefaultJsonProvider()
+        return DefaultMatrixNativeAuthService(
+            retrofitFactory = RetrofitFactory(
+                okHttpClient = object : Provider<OkHttpClient> {
+                    override fun invoke(): OkHttpClient = OkHttpClient()
+                },
+                json = object : Provider<JsonProvider> {
+                    override fun invoke(): JsonProvider = jsonProvider
+                },
+            ),
+            jsonProvider = jsonProvider,
+        )
     }
 }

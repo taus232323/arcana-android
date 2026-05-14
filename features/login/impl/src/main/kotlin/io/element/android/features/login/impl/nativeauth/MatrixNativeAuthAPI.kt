@@ -10,6 +10,9 @@ package io.element.android.features.login.impl.nativeauth
 import io.element.android.appconfig.ApplicationConfig
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -125,10 +128,35 @@ internal data class EmailLoginRequest(
     @SerialName("client_secret")
     val clientSecret: String,
     val login: String,
+    val identifier: JsonObject = loginIdentifier(login),
     val password: String,
     @SerialName("send_attempt")
     val sendAttempt: Int,
 )
+
+private fun loginIdentifier(login: String): JsonObject {
+    val sanitizedLogin = login.trim()
+    return if (sanitizedLogin.isEmailAddress()) {
+        buildJsonObject {
+            put("type", JsonPrimitive("m.id.thirdparty"))
+            put("medium", JsonPrimitive("email"))
+            put("address", JsonPrimitive(sanitizedLogin))
+        }
+    } else {
+        buildJsonObject {
+            put("type", JsonPrimitive("m.id.user"))
+            put("user", JsonPrimitive(sanitizedLogin))
+        }
+    }
+}
+
+private fun String.isEmailAddress(): Boolean {
+    val atIndex = indexOf('@')
+    return atIndex > 0 &&
+        atIndex == lastIndexOf('@') &&
+        atIndex < lastIndex &&
+        substring(atIndex + 1).contains('.')
+}
 
 @Serializable
 internal data class EmailLoginStartResponse(
