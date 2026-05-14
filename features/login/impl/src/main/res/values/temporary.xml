@@ -2,7 +2,7 @@
 <resources>
     <string name="screen_change_account_provider_default_subtitle">celesteai.ru is the default homeserver for this client.</string>
     <string name="action_sign_in">Sign in</string>
-    <string name="screen_login_login_label">Login or email</string>
+    <string name="screen_login_login_label">Username or linked email</string>
     <string name="screen_native_registration_title">Create account</string>
     <string name="screen_native_registration_subtitle">Create a new account on %1$s using email verification.</string>
     <string name="screen_native_registration_username_label">Username (optional)</string>
@@ -55,12 +55,12 @@
     <string name="screen_login_verification_code_label">Verification code</string>
     <string name="screen_login_action_resend_code">Resend code</string>
     <string name="screen_login_credentials_title">Sign in</string>
-    <string name="screen_login_credentials_subtitle">Enter your login or email address, then your password.</string>
+    <string name="screen_login_credentials_subtitle">Enter your username or linked email address, then your password.</string>
     <string name="screen_login_error_invalid_code">That code is not valid. Try again or resend a new code.</string>
     <string name="screen_login_error_email_verification_unavailable">This account cannot use email code login.</string>
     <string name="screen_login_error_rate_limited">Too many attempts. Please wait and try again.</string>
     <string name="screen_account_provider_signin_title_arcana">Sign in to Arcana</string>
-    <string name="screen_account_provider_signin_subtitle_arcana">Use your login or email address to continue.</string>
+    <string name="screen_account_provider_signin_subtitle_arcana">Use your username or linked email address to continue.</string>
     <string name="screen_account_provider_signup_title_arcana">Create an Arcana account</string>
     <string name="screen_account_provider_signup_subtitle_arcana">Use your email address to create an account.</string>
     <string name="screen_native_registration_email_step_title">Create your account</string>
