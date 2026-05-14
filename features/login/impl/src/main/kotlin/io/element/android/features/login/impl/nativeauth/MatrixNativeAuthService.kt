@@ -20,6 +20,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.Response
+import timber.log.Timber
 import java.util.UUID
 
 interface MatrixNativeAuthService {
@@ -190,6 +191,7 @@ class DefaultMatrixNativeAuthService(
         homeserverUrl: String,
         email: String,
     ): Result<PasswordResetResult> = runCatchingExceptions {
+        Timber.tag("PasswordReset").d("startPasswordReset: begin")
         if (email.isBlank()) {
             throw NativeAuthException.EmailRequired
         }
@@ -212,10 +214,12 @@ class DefaultMatrixNativeAuthService(
             )
         )
         if (response.isSuccessful) {
+            Timber.tag("PasswordReset").d("startPasswordReset: requestToken success")
             PasswordResetResult.AwaitingEmailVerification(
                 pendingPasswordReset.copy(sid = requireNotNull(response.body()).sid)
             )
         } else {
+            Timber.tag("PasswordReset").d("startPasswordReset: requestToken failed")
             throw parseError(response.errorBody())
         }
     }
@@ -224,6 +228,7 @@ class DefaultMatrixNativeAuthService(
         pendingPasswordReset: PendingPasswordReset,
         verificationCode: String,
     ): Result<PasswordResetResult> = runCatchingExceptions {
+        Timber.tag("PasswordReset").d("submitPasswordResetEmailCode: begin")
         val response = api(pendingPasswordReset.homeserverUrl).submitPasswordResetEmailToken(
             RegistrationEmailSubmitRequest(
                 clientSecret = pendingPasswordReset.clientSecret,
@@ -232,10 +237,12 @@ class DefaultMatrixNativeAuthService(
             )
         )
         if (response.isSuccessful) {
+            Timber.tag("PasswordReset").d("submitPasswordResetEmailCode: submitToken success")
             PasswordResetResult.AwaitingCredentials(
                 pendingPasswordReset.copy(sid = requireNotNull(response.body()).sid)
             )
         } else {
+            Timber.tag("PasswordReset").d("submitPasswordResetEmailCode: submitToken failed")
             throw when (val error = parseError(response.errorBody())) {
                 NativeAuthException.InvalidCredentials -> NativeAuthException.InvalidVerificationCode
                 is NativeAuthException.MessageError -> NativeAuthException.InvalidVerificationCode
@@ -248,6 +255,7 @@ class DefaultMatrixNativeAuthService(
         pendingPasswordReset: PendingPasswordReset,
         newPassword: String,
     ): Result<PasswordResetResult> = runCatchingExceptions {
+        Timber.tag("PasswordReset").d("continuePasswordReset: begin")
         val response = api(pendingPasswordReset.homeserverUrl).resetPassword(
             ResetPasswordRequest(
                 password = newPassword,
@@ -257,8 +265,10 @@ class DefaultMatrixNativeAuthService(
             )
         )
         if (response.isSuccessful) {
+            Timber.tag("PasswordReset").d("continuePasswordReset: reset success")
             PasswordResetResult.Success
         } else {
+            Timber.tag("PasswordReset").d("continuePasswordReset: reset failed")
             throw parseError(response.errorBody())
         }
     }
@@ -266,6 +276,7 @@ class DefaultMatrixNativeAuthService(
     override suspend fun resendPasswordResetEmail(
         pendingPasswordReset: PendingPasswordReset,
     ): Result<PendingPasswordReset> = runCatchingExceptions {
+        Timber.tag("PasswordReset").d("resendPasswordResetEmail: begin")
         val updated = pendingPasswordReset.copy(sendAttempt = pendingPasswordReset.sendAttempt + 1)
         val response = api(updated.homeserverUrl).requestPasswordResetEmailToken(
             EmailRequestTokenRequest(
@@ -275,8 +286,10 @@ class DefaultMatrixNativeAuthService(
             )
         )
         if (response.isSuccessful) {
+            Timber.tag("PasswordReset").d("resendPasswordResetEmail: requestToken success")
             updated.copy(sid = requireNotNull(response.body()).sid)
         } else {
+            Timber.tag("PasswordReset").d("resendPasswordResetEmail: requestToken failed")
             throw parseError(response.errorBody())
         }
     }

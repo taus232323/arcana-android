@@ -26,6 +26,7 @@ import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.architecture.Presenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @AssistedInject
 class PasswordResetPresenter(
@@ -59,14 +60,19 @@ class PasswordResetPresenter(
         fun handleEvent(event: PasswordResetEvents) {
             when (event) {
                 PasswordResetEvents.ClearError -> resetAction.value = AsyncData.Uninitialized
-                PasswordResetEvents.ClearSuccess -> resetAction.value = AsyncData.Uninitialized
+                PasswordResetEvents.ClearSuccess -> {
+                    Timber.tag("PasswordReset").d("ui: clear success")
+                    resetAction.value = AsyncData.Uninitialized
+                }
                 PasswordResetEvents.ResendEmail -> {
+                    Timber.tag("PasswordReset").d("ui: resend email from step=%s", step.value.name)
                     localCoroutineScope.resendEmail(
                         pendingPasswordReset = pendingPasswordReset,
                         resetAction = resetAction,
                     )
                 }
                 PasswordResetEvents.GoBack -> {
+                    Timber.tag("PasswordReset").d("ui: go back from step=%s", step.value.name)
                     when (step.value) {
                         PasswordResetStep.Email -> Unit
                         PasswordResetStep.Code -> {
@@ -81,9 +87,11 @@ class PasswordResetPresenter(
                     }
                 }
                 is PasswordResetEvents.SetConfirmPassword -> updateFormState(formState) {
+                    Timber.tag("PasswordReset").d("ui: confirm password changed")
                     copy(confirmPassword = event.confirmPassword)
                 }
                 is PasswordResetEvents.SetEmail -> {
+                    Timber.tag("PasswordReset").d("ui: email changed")
                     val sanitized = event.email.trim()
                     val previousEmail = formState.value.email.trim()
                     updateFormState(formState) {
@@ -102,31 +110,25 @@ class PasswordResetPresenter(
                     }
                 }
                 is PasswordResetEvents.SetVerificationCode -> updateFormState(formState) {
+                    Timber.tag("PasswordReset").d("ui: verification code changed")
                     copy(verificationCode = event.verificationCode)
                 }
                 is PasswordResetEvents.SetNewPassword -> updateFormState(formState) {
+                    Timber.tag("PasswordReset").d("ui: new password changed")
                     copy(newPassword = event.newPassword)
                 }
                 PasswordResetEvents.Submit -> {
+                    Timber.tag("PasswordReset").d("ui: submit from step=%s", step.value.name)
                     when (step.value) {
                         PasswordResetStep.Email -> {
-                            val currentEmail = formState.value.email.trim()
-                            val currentPendingPasswordReset = pendingPasswordReset.value
-                            if (currentPendingPasswordReset != null && currentPendingPasswordReset.email == currentEmail) {
-                                step.value = PasswordResetStep.Code
-                                updateFormState(formState) {
-                                    copy(verificationCode = "")
-                                }
-                            } else {
-                                localCoroutineScope.startReset(
-                                    homeserverUrl = accountProvider.url,
-                                    email = currentEmail,
-                                    pendingPasswordReset = pendingPasswordReset,
-                                    resetAction = resetAction,
-                                    step = step,
-                                    formState = formState,
-                                )
-                            }
+                            localCoroutineScope.startReset(
+                                homeserverUrl = accountProvider.url,
+                                email = formState.value.email.trim(),
+                                pendingPasswordReset = pendingPasswordReset,
+                                resetAction = resetAction,
+                                step = step,
+                                formState = formState,
+                            )
                         }
                         PasswordResetStep.Code -> {
                             localCoroutineScope.submitResetCode(
@@ -166,6 +168,7 @@ class PasswordResetPresenter(
         step: MutableState<PasswordResetStep>,
         formState: MutableState<PasswordResetFormState>,
     ) = launch {
+        Timber.tag("PasswordReset").d("flow: start reset")
         resetAction.value = AsyncData.Loading()
         pendingPasswordReset.value = null
         nativeAuthService.startPasswordReset(
@@ -174,6 +177,7 @@ class PasswordResetPresenter(
         ).onSuccess { result ->
             when (result) {
                 is PasswordResetResult.AwaitingEmailVerification -> {
+                    Timber.tag("PasswordReset").d("flow: awaiting email verification")
                     pendingPasswordReset.value = result.pendingPasswordReset
                     step.value = PasswordResetStep.Code
                     updateFormState(formState) {
@@ -197,6 +201,7 @@ class PasswordResetPresenter(
         step: MutableState<PasswordResetStep>,
     ) = launch {
         val currentPendingPasswordReset = pendingPasswordReset.value ?: return@launch
+        Timber.tag("PasswordReset").d("flow: submit reset code")
         resetAction.value = AsyncData.Loading()
         nativeAuthService.submitPasswordResetEmailCode(
             pendingPasswordReset = currentPendingPasswordReset,
@@ -205,6 +210,7 @@ class PasswordResetPresenter(
             .onSuccess { result ->
                 when (result) {
                     is PasswordResetResult.AwaitingCredentials -> {
+                        Timber.tag("PasswordReset").d("flow: code accepted, moving to credentials")
                         pendingPasswordReset.value = result.pendingPasswordReset
                         step.value = PasswordResetStep.Credentials
                         resetAction.value = AsyncData.Uninitialized
@@ -224,6 +230,7 @@ class PasswordResetPresenter(
         resetAction: MutableState<AsyncData<Unit>>,
     ) = launch {
         val currentPendingPasswordReset = pendingPasswordReset.value ?: return@launch
+        Timber.tag("PasswordReset").d("flow: resend email")
         resetAction.value = AsyncData.Loading()
         nativeAuthService.resendPasswordResetEmail(currentPendingPasswordReset)
             .onSuccess { updatedPendingPasswordReset ->
@@ -241,6 +248,7 @@ class PasswordResetPresenter(
         resetAction: MutableState<AsyncData<Unit>>,
     ) = launch {
         val currentPendingPasswordReset = pendingPasswordReset.value ?: return@launch
+        Timber.tag("PasswordReset").d("flow: finish reset")
         resetAction.value = AsyncData.Loading()
         if (formState.value.newPassword != formState.value.confirmPassword) {
             resetAction.value = AsyncData.Failure(PasswordResetValidationException.PasswordMismatch)
@@ -252,6 +260,7 @@ class PasswordResetPresenter(
         ).onSuccess { result ->
             when (result) {
                 PasswordResetResult.Success -> {
+                    Timber.tag("PasswordReset").d("flow: reset success")
                     pendingPasswordReset.value = null
                     resetAction.value = AsyncData.Success(Unit)
                 }

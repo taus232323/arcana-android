@@ -61,6 +61,40 @@ class PasswordResetPresenterTest {
     }
 
     @Test
+    fun `present - submit email always requests a fresh reset`() = runTest {
+        var startCalls = 0
+        val nativeAuthService = FakeMatrixNativeAuthService(
+            startPasswordResetResult = { _, _ ->
+                startCalls += 1
+                Result.success(
+                    PasswordResetResult.AwaitingEmailVerification(
+                        aPendingPasswordReset().copy(email = "alice@example.com")
+                    )
+                )
+            }
+        )
+        createPasswordResetPresenter(nativeAuthService = nativeAuthService).test {
+            val initialState = awaitItem()
+            initialState.eventSink.invoke(PasswordResetEvents.SetEmail("alice@example.com"))
+            awaitItem()
+            initialState.eventSink.invoke(PasswordResetEvents.Submit)
+            awaitItem()
+            awaitItem()
+            assertThat(startCalls).isEqualTo(1)
+
+            val codeState = awaitItem()
+            codeState.eventSink.invoke(PasswordResetEvents.GoBack)
+            val emailState = awaitItem()
+            emailState.eventSink.invoke(PasswordResetEvents.Submit)
+            awaitItem()
+            awaitItem()
+            val retriedCodeState = awaitItem()
+            assertThat(retriedCodeState.step).isEqualTo(PasswordResetStep.Code)
+            assertThat(startCalls).isEqualTo(2)
+        }
+    }
+
+    @Test
     fun `present - submit verification code opens credentials step`() = runTest {
         val nativeAuthService = FakeMatrixNativeAuthService(
             startPasswordResetResult = { _, _ ->
