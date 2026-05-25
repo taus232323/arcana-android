@@ -9,6 +9,7 @@
 package io.element.android.appnav.intent
 
 import android.content.Intent
+import android.net.Uri
 import dev.zacsweers.metro.Inject
 import io.element.android.features.login.api.LoginIntentResolver
 import io.element.android.features.login.api.LoginParams
@@ -27,6 +28,7 @@ sealed interface ResolvedIntent {
     data class Oidc(val oidcAction: OidcAction) : ResolvedIntent
     data class Permalink(val permalinkData: PermalinkData) : ResolvedIntent
     data class Login(val params: LoginParams) : ResolvedIntent
+    data class ArcanaInvite(val token: String, val webUrl: String?) : ResolvedIntent
     data class IncomingShare(val shareIntentData: ShareIntentData) : ResolvedIntent
 }
 
@@ -58,6 +60,10 @@ class IntentResolver(
             ?.let { loginIntentResolver.parse(it) }
         if (mobileLoginData != null) return ResolvedIntent.Login(mobileLoginData)
 
+        val arcanaInviteData = actionViewData
+            ?.let { parseArcanaInvite(it) }
+        if (arcanaInviteData != null) return arcanaInviteData
+
         // External link clicked? (matrix.to, element.io, etc.)
         val permalinkData = actionViewData
             ?.let { permalinkParser.parse(it) }
@@ -73,6 +79,30 @@ class IntentResolver(
         Timber.w("Unknown intent")
         return null
     }
+}
+
+private fun parseArcanaInvite(uriString: String): ResolvedIntent.ArcanaInvite? {
+    val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: return null
+
+    val isCustomScheme = uri.scheme == "arcana" && uri.host == "invite"
+    val isHttpsInvite = uri.scheme == "https" &&
+        uri.host == "arcana.celesteai.ru" &&
+        uri.pathSegments.firstOrNull() == "invite" &&
+        uri.pathSegments.size >= 2
+
+    if (!isCustomScheme && !isHttpsInvite) return null
+
+    val token = when {
+        isCustomScheme -> uri.pathSegments.firstOrNull()
+        else -> uri.pathSegments.getOrNull(1)
+    }?.takeIf { it.isNotBlank() } ?: return null
+
+    val webUrl = when {
+        isHttpsInvite -> uri.toString()
+        else -> uri.getQueryParameter("web")
+    }?.takeIf { it.isNotBlank() }
+
+    return ResolvedIntent.ArcanaInvite(token = token, webUrl = webUrl)
 }
 
 private fun Intent.canBeIgnored(): Boolean {

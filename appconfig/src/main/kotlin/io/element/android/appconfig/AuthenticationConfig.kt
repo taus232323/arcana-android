@@ -10,7 +10,7 @@ package io.element.android.appconfig
 
 object AuthenticationConfig {
     const val DEFAULT_ACCOUNT_PROVIDER_URL = "https://celesteai.ru"
-    const val DEFAULT_HOMESERVER_URL = "https://matrix.celesteai.ru"
+    const val DEFAULT_HOMESERVER_URL = "https://arcana.celesteai.ru"
 
     // Changing server_name after shipping is a database-breaking Matrix server migration, not a client-only setting change.
     const val DEFAULT_SERVER_NAME = "celesteai.ru"

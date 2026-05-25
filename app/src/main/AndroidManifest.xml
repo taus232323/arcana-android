@@ -129,6 +129,25 @@
 
                 <data android:scheme="matrix" />
             </intent-filter>
+            <!-- Arcana invite links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="arcana" android:host="invite" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="arcana.celesteai.ru" />
+                <data android:pathPrefix="/invite/" />
+            </intent-filter>
             <!--
               links from matrix.to website
             -->

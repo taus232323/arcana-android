@@ -35,6 +35,7 @@ import io.element.android.annotations.ContributesNode
 import io.element.android.appnav.di.MatrixSessionCache
 import io.element.android.appnav.intent.IntentResolver
 import io.element.android.appnav.intent.ResolvedIntent
+import io.element.android.appnav.intent.ResolvedIntent.ArcanaInvite as ArcanaInviteIntent
 import io.element.android.appnav.room.RoomFlowNode
 import io.element.android.appnav.room.RoomNavigationTarget
 import io.element.android.appnav.root.RootNavStateFlowFactory
@@ -59,8 +60,10 @@ import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.SessionId
+import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.ThreadId
 import io.element.android.libraries.matrix.api.core.asEventId
+import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.core.toRoomIdOrAlias
 import io.element.android.libraries.matrix.api.permalink.PermalinkData
 import io.element.android.libraries.oidc.api.OidcAction
@@ -109,6 +112,8 @@ class RootFlowNode(
     buildContext = buildContext,
     plugins = plugins
 ) {
+    private var pendingArcanaInviteRoomId: RoomId? = null
+
     override fun onBuilt() {
         analyticsColdStartWatcher.start()
         appCoroutineScope.launch {
@@ -141,9 +146,17 @@ class RootFlowNode(
                             val sessionId = SessionId(navState.loggedInState.sessionId)
                             if (matrixSessionCache.getOrNull(sessionId) != null) {
                                 switchToLoggedInFlow(sessionId, navState.cacheIndex)
+                                lifecycleScope.launch {
+                                    openPendingArcanaInviteRoomIfNeeded(sessionId)
+                                }
                             } else {
                                 tryToRestoreLatestSession(
-                                    onSuccess = { sessionId -> switchToLoggedInFlow(sessionId, navState.cacheIndex) },
+                                    onSuccess = { restoredSessionId ->
+                                        switchToLoggedInFlow(restoredSessionId, navState.cacheIndex)
+                                        lifecycleScope.launch {
+                                            openPendingArcanaInviteRoomIfNeeded(restoredSessionId)
+                                        }
+                                    },
                                     onFailure = { switchToNotLoggedInFlow(null) }
                                 )
                             }
@@ -265,6 +278,12 @@ class RootFlowNode(
     sealed interface NavTarget : Parcelable {
         @Parcelize data object SplashScreen : NavTarget
 
+        @Parcelize
+        data class ArcanaInvite(
+            val token: String,
+            val webUrl: String?,
+        ) : NavTarget
+
         @Parcelize data class AccountSelect(
             val currentSessionId: SessionId,
             val shareIntentData: ShareIntentData?,
@@ -337,6 +356,35 @@ class RootFlowNode(
                 )
             }
             NavTarget.SplashScreen -> emptyNode(buildContext)
+            is NavTarget.ArcanaInvite -> {
+                val inputs = ArcanaInviteNode.Inputs(
+                    token = navTarget.token,
+                    webUrl = navTarget.webUrl,
+                )
+                val callback = object : ArcanaInviteNode.Callback {
+                    override fun onInviteAccepted(roomId: RoomId) {
+                        lifecycleScope.launch {
+                            val latestSessionId = sessionStore.getLatestSessionId()
+                            when (resolveArcanaInviteAcceptanceTarget(roomId, latestSessionId != null)) {
+                                is ArcanaInviteAcceptanceTarget.OpenRoom -> {
+                                    val sessionId = requireNotNull(latestSessionId)
+                                    val navId = sessionStore.getLatestSession()?.lastUsageIndex?.toInt() ?: 0
+                                    switchToLoggedInFlow(sessionId, navId)
+                                    attachSession(sessionId).attachRoom(
+                                        roomIdOrAlias = roomId.toRoomIdOrAlias(),
+                                        clearBackstack = true,
+                                    )
+                                }
+                                is ArcanaInviteAcceptanceTarget.QueueRoom -> {
+                                    pendingArcanaInviteRoomId = roomId
+                                    switchToNotLoggedInFlow(null)
+                                }
+                            }
+                        }
+                    }
+                }
+                createNode<ArcanaInviteNode>(buildContext, plugins = listOf(inputs, callback))
+            }
             NavTarget.BugReport -> {
                 val callback = object : BugReportEntryPoint.Callback {
                     override fun onDone() {
@@ -394,8 +442,50 @@ class RootFlowNode(
             is ResolvedIntent.Login -> onLoginLink(resolvedIntent.params)
             is ResolvedIntent.Oidc -> onOidcAction(resolvedIntent.oidcAction)
             is ResolvedIntent.Permalink -> navigateTo(resolvedIntent.permalinkData)
+            is ArcanaInviteIntent -> {
+                when (val target = resolveArcanaInviteIntentTarget(resolvedIntent.token, resolvedIntent.webUrl)) {
+                    is ArcanaInviteIntentTarget.OpenDirectMessage -> {
+                        if (openDirectMessageInLatestSession(target.userId)) {
+                            return
+                        }
+                    }
+                    is ArcanaInviteIntentTarget.ShowInvite -> Unit
+                }
+                backstack.safeRoot(
+                    NavTarget.ArcanaInvite(
+                        token = resolvedIntent.token,
+                        webUrl = resolvedIntent.webUrl,
+                    )
+                )
+            }
             is ResolvedIntent.IncomingShare -> onIncomingShare(resolvedIntent.shareIntentData)
         }
+    }
+
+    private suspend fun openDirectMessageInLatestSession(userId: UserId): Boolean {
+        val latestSession = sessionStore.getLatestSession() ?: return false
+        val latestSessionId = SessionId(latestSession.userId)
+        return matrixSessionCache.getOrRestore(latestSessionId).fold(
+            onSuccess = {
+                val navId = latestSession.lastUsageIndex.toInt()
+                switchToLoggedInFlow(latestSessionId, navId)
+                attachSession(latestSessionId).openDirectMessage(userId)
+                true
+            },
+            onFailure = {
+                Timber.w(it, "Couldn't restore a session to open DM for $userId")
+                false
+            }
+        )
+    }
+
+    private suspend fun openPendingArcanaInviteRoomIfNeeded(sessionId: SessionId) {
+        val roomId = pendingArcanaInviteRoomId ?: return
+        pendingArcanaInviteRoomId = null
+        attachSession(sessionId).attachRoom(
+            roomIdOrAlias = roomId.toRoomIdOrAlias(),
+            clearBackstack = true,
+        )
     }
 
     private suspend fun onLoginLink(params: LoginParams) {

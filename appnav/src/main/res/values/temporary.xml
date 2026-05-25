@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="screen_arcana_invite_title">Arcana invite</string>
+    <string name="screen_arcana_invite_subtitle">Review the invite before joining.</string>
+    <string name="screen_arcana_invite_loading_message">Opening invite...</string>
+    <string name="screen_arcana_invite_joining_message">Joining chat...</string>
+    <string name="screen_arcana_invite_error_title">Could not load invite</string>
+    <string name="screen_arcana_invite_error_message">We could not load this invite. Try again or open it in the browser.</string>
+    <string name="screen_arcana_invite_accept_error_message">We could not accept this invite. Please try again.</string>
+    <string name="screen_arcana_invite_room_label">Chat</string>
+    <string name="screen_arcana_invite_inviter_label">Invited by</string>
+    <string name="screen_arcana_invite_expires_label">Expires</string>
+    <string name="screen_arcana_invite_unknown_inviter">Unknown inviter</string>
+    <string name="screen_arcana_invite_private_chat">Private chat</string>
+    <string name="screen_arcana_invite_action_open_browser_page">Open browser page</string>
+    <string name="screen_arcana_invite_action_open_chat">Open chat</string>
+    <string name="screen_arcana_invite_status_label">Status</string>
+    <string name="screen_arcana_invite_status_used">This invite has already been used.</string>
+</resources>

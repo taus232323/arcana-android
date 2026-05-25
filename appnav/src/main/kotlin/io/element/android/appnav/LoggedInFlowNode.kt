@@ -84,8 +84,10 @@ import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.RoomIdOrAlias
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.core.toRoomIdOrAlias
+import io.element.android.libraries.matrix.api.room.startDM
 import io.element.android.libraries.matrix.api.permalink.PermalinkData
 import io.element.android.libraries.matrix.api.room.JoinedRoom
+import io.element.android.libraries.matrix.api.room.StartDMResult
 import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.api.verification.SessionVerificationServiceListener
 import io.element.android.libraries.matrix.api.verification.VerificationRequest
@@ -652,6 +654,26 @@ class LoggedInFlowNode(
                     userId = userId,
                 )
             )
+        }
+    }
+
+    suspend fun openDirectMessage(userId: UserId) {
+        waitForNavTargetAttached { navTarget ->
+            navTarget is NavTarget.Home
+        }
+        when (val result = matrixClient.startDM(userId, createIfDmDoesNotExist = true)) {
+            is StartDMResult.Success -> {
+                attachRoom(
+                    roomIdOrAlias = result.roomId.toRoomIdOrAlias(),
+                    clearBackstack = true,
+                )
+            }
+            is StartDMResult.Failure -> {
+                Timber.w(result.throwable, "Failed to open DM for $userId")
+            }
+            StartDMResult.DmDoesNotExist -> {
+                Timber.w("Could not open DM for $userId")
+            }
         }
     }
 

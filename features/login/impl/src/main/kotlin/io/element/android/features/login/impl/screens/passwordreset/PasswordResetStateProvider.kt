@@ -79,7 +79,7 @@ fun aPasswordResetFormState(
 )
 
 fun aPendingPasswordReset() = PendingPasswordReset(
-    homeserverUrl = "https://matrix.celesteai.ru",
+    homeserverUrl = "https://arcana.celesteai.ru",
     email = "alice@example.com",
     clientSecret = "secret",
     sendAttempt = 1,

@@ -209,6 +209,61 @@ class IntentResolverTest {
     }
 
     @Test
+    fun `test resolve arcana invite custom scheme`() {
+        val sut = createIntentResolver(
+            permalinkParserResult = { PermalinkData.FallbackLink(Uri.parse(it)) },
+            loginIntentResolverResult = { null },
+            oidcIntentResolverResult = { null },
+        )
+        val intent = Intent(RuntimeEnvironment.getApplication(), Activity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = "arcana://invite/token-123?web=https%3A%2F%2Farcana.example%2Finvite%2Ftoken-123".toUri()
+        }
+        val result = sut.resolve(intent)
+        assertThat(result).isEqualTo(
+            ResolvedIntent.ArcanaInvite(
+                token = "token-123",
+                webUrl = "https://arcana.example/invite/token-123",
+            )
+        )
+    }
+
+    @Test
+    fun `test resolve arcana invite https`() {
+        val sut = createIntentResolver(
+            permalinkParserResult = { PermalinkData.FallbackLink(Uri.parse(it)) },
+            loginIntentResolverResult = { null },
+            oidcIntentResolverResult = { null },
+        )
+        val intent = Intent(RuntimeEnvironment.getApplication(), Activity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = "https://arcana.celesteai.ru/invite/token-456".toUri()
+        }
+        val result = sut.resolve(intent)
+        assertThat(result).isEqualTo(
+            ResolvedIntent.ArcanaInvite(
+                token = "token-456",
+                webUrl = "https://arcana.celesteai.ru/invite/token-456",
+            )
+        )
+    }
+
+    @Test
+    fun `test resolve arcana invite https on another host is ignored`() {
+        val sut = createIntentResolver(
+            permalinkParserResult = { PermalinkData.FallbackLink(Uri.parse(it)) },
+            loginIntentResolverResult = { null },
+            oidcIntentResolverResult = { null },
+        )
+        val intent = Intent(RuntimeEnvironment.getApplication(), Activity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = "https://example.com/invite/token-789".toUri()
+        }
+        val result = sut.resolve(intent)
+        assertThat(result).isNull()
+    }
+
+    @Test
     fun `test resolve external permalink, FallbackLink should be ignored`() {
         val sut = createIntentResolver(
             permalinkParserResult = { PermalinkData.FallbackLink(Uri.parse("https://matrix.org")) },

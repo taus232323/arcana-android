@@ -30,6 +30,7 @@ dependencies {
     implementation(projects.libraries.accountselect.api)
     implementation(projects.libraries.androidutils)
     implementation(projects.libraries.architecture)
+    implementation(projects.libraries.network)
     implementation(projects.libraries.deeplink.api)
     implementation(projects.libraries.featureflag.api)
     implementation(projects.libraries.matrix.api)
@@ -54,6 +55,9 @@ dependencies {
     implementation(projects.services.apperror.api)
     implementation(projects.services.appnavstate.api)
     implementation(projects.services.analytics.api)
+    implementation(platform(libs.network.retrofit.bom))
+    implementation(libs.network.retrofit)
+    implementation(libs.serialization.json)
 
     testCommonDependencies(libs)
     testImplementation(projects.features.login.test)
