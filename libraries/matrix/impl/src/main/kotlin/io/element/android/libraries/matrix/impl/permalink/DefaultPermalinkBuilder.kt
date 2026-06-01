@@ -10,6 +10,7 @@ package io.element.android.libraries.matrix.impl.permalink
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
+import io.element.android.appconfig.MatrixConfiguration
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.matrix.api.core.MatrixPatterns
 import io.element.android.libraries.matrix.api.core.RoomAlias
@@ -20,10 +21,15 @@ import org.matrix.rustcomponents.sdk.matrixToRoomAliasPermalink
 import org.matrix.rustcomponents.sdk.matrixToUserPermalink
 
 @ContributesBinding(AppScope::class)
-class DefaultPermalinkBuilder : PermalinkBuilder {
+class DefaultPermalinkBuilder(
+    private val clientPermalinkBaseUrl: String? = MatrixConfiguration.clientPermalinkBaseUrl,
+) : PermalinkBuilder {
     override fun permalinkForUser(userId: UserId): Result<String> {
         if (!MatrixPatterns.isUserId(userId.value)) {
             return Result.failure(PermalinkBuilderError.InvalidData)
+        }
+        clientPermalinkBaseUrl?.takeIf { it.isNotBlank() }?.let { baseUrl ->
+            return Result.success("${baseUrl}user/${userId.value}")
         }
         return runCatchingExceptions {
             matrixToUserPermalink(userId.value)
@@ -33,6 +39,9 @@ class DefaultPermalinkBuilder : PermalinkBuilder {
     override fun permalinkForRoomAlias(roomAlias: RoomAlias): Result<String> {
         if (!MatrixPatterns.isRoomAlias(roomAlias.value)) {
             return Result.failure(PermalinkBuilderError.InvalidData)
+        }
+        clientPermalinkBaseUrl?.takeIf { it.isNotBlank() }?.let { baseUrl ->
+            return Result.success("${baseUrl}room/${roomAlias.value}")
         }
         return runCatchingExceptions {
             matrixToRoomAliasPermalink(roomAlias.value)

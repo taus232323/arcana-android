@@ -44,6 +44,10 @@ android {
                 "element-x-android"
             },
         )
+        buildConfigFieldStr(
+            name = "CLIENT_PERMALINK_BASE_URL",
+            value = BuildTimeConfig.CLIENT_PERMALINK_BASE_URL ?: "",
+        )
     }
 }
 
