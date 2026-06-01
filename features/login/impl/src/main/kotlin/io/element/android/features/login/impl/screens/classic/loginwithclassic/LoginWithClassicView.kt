@@ -81,7 +81,7 @@ fun LoginWithClassicView(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(40.dp))
-                ArcanaMark(size = 96.dp)
+                ArcanaMark(size = 280.dp)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(id = R.string.screen_onboarding_welcome_title_arcana),

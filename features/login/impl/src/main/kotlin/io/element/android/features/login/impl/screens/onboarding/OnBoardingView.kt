@@ -205,7 +205,7 @@ private fun OnBoardingContent(state: OnBoardingState) {
         ) {
             ArcanaMark(
                 modifier = Modifier.padding(top = 8.dp),
-                size = 164.dp,
+                size = 280.dp,
             )
         }
         Box(

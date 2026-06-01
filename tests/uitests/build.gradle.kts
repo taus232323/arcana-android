@@ -49,8 +49,6 @@ dependencies {
     allLibrariesImpl()
     allServicesImpl()
     allFeaturesImpl(project)
-    implementation(projects.appicon.element)
-    implementation(projects.appicon.enterprise)
 
     testImplementation(libs.test.junit)
     testImplementation(libs.test.parameter.injector)
