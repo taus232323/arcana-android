@@ -28,10 +28,13 @@ dependencies {
     implementation(projects.libraries.androidutils)
     implementation(projects.libraries.architecture)
     implementation(projects.appconfig)
+    implementation(projects.libraries.network)
+    implementation(projects.libraries.sessionstorage.api)
     implementation(projects.libraries.uiStrings)
     implementation(projects.services.toolbox.api)
 
     testCommonDependencies(libs)
     testImplementation(projects.libraries.matrix.test)
+    testImplementation(projects.libraries.sessionstorage.test)
     testImplementation(projects.services.toolbox.test)
 }

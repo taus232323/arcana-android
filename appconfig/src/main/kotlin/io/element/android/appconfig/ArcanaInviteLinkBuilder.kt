@@ -12,9 +12,9 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 object ArcanaInviteLinkBuilder {
-    fun build(sessionId: String): String {
-        val encodedSessionId = URLEncoder.encode(sessionId, StandardCharsets.UTF_8.name())
+    fun build(token: String): String {
+        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.name())
             .replace("+", "%20")
-        return "${ArcanaConfiguration.ARCANA_INVITE_BASE_URL}/invite/$encodedSessionId"
+        return "${ArcanaConfiguration.ARCANA_INVITE_BASE_URL}/invite/$encodedToken"
     }
 }

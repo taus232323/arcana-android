@@ -14,15 +14,15 @@ import org.junit.Test
 class ArcanaInviteLinkBuilderTest {
     @Test
     fun `build returns arcana invite url`() {
-        val result = ArcanaInviteLinkBuilder.build("@alice:celesteai.ru")
+        val result = ArcanaInviteLinkBuilder.build("invite-token-123")
 
-        assertThat(result).isEqualTo("https://arcana.celesteai.ru/invite/%40alice%3Acelesteai.ru")
+        assertThat(result).isEqualTo("https://arcana.celesteai.ru/invite/invite-token-123")
     }
 
     @Test
     fun `build escapes invalid path characters`() {
-        val result = ArcanaInviteLinkBuilder.build("@a/:domain")
+        val result = ArcanaInviteLinkBuilder.build("a/:domain")
 
-        assertThat(result).isEqualTo("https://arcana.celesteai.ru/invite/%40a%2F%3Adomain")
+        assertThat(result).isEqualTo("https://arcana.celesteai.ru/invite/a%2F%3Adomain")
     }
 }
