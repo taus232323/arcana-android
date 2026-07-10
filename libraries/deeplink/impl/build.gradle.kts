@@ -11,6 +11,7 @@ import extension.testCommonDependencies
 
 plugins {
     id("io.element.android-library")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -29,12 +30,15 @@ dependencies {
     implementation(projects.libraries.architecture)
     implementation(projects.appconfig)
     implementation(projects.libraries.network)
-    implementation(projects.libraries.sessionstorage.api)
+    implementation(platform(libs.network.retrofit.bom))
+    implementation(libs.network.retrofit)
+    implementation(libs.serialization.json)
+    implementation(projects.libraries.sessionStorage.api)
     implementation(projects.libraries.uiStrings)
     implementation(projects.services.toolbox.api)
 
     testCommonDependencies(libs)
     testImplementation(projects.libraries.matrix.test)
-    testImplementation(projects.libraries.sessionstorage.test)
+    testImplementation(projects.libraries.sessionStorage.test)
     testImplementation(projects.services.toolbox.test)
 }

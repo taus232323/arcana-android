@@ -22,6 +22,7 @@ import extension.allLibrariesImpl
 import extension.allServicesImpl
 import extension.buildConfigFieldStr
 import extension.locales
+import extension.readLocalProperty
 import extension.setupDependencyInjection
 import extension.testCommonDependencies
 import java.util.Locale
@@ -96,6 +97,25 @@ android {
             storePassword = System.getenv("ELEMENT_ANDROID_NIGHTLY_STOREPASSWORD")
                 ?: project.property("signing.element.nightly.storePassword") as? String?
         }
+        register("releaseSigning") {
+            val keystorePath = System.getenv("ARCANA_RELEASE_KEYSTORE_PATH")
+                ?: readLocalProperty("signing.arcana.release.storeFile")
+                ?: "./signature/release.keystore"
+            keyAlias = System.getenv("ARCANA_RELEASE_KEY_ALIAS")
+                ?: readLocalProperty("signing.arcana.release.keyId")
+                ?: project.findProperty("signing.arcana.release.keyId") as? String?
+            keyPassword = System.getenv("ARCANA_RELEASE_KEY_PASSWORD")
+                ?: readLocalProperty("signing.arcana.release.keyPassword")
+                ?: project.findProperty("signing.arcana.release.keyPassword") as? String?
+            storeFile = when {
+                File(keystorePath).isAbsolute -> file(keystorePath)
+                keystorePath.startsWith("app/") -> rootProject.file(keystorePath)
+                else -> file(keystorePath)
+            }
+            storePassword = System.getenv("ARCANA_RELEASE_STORE_PASSWORD")
+                ?: readLocalProperty("signing.arcana.release.storePassword")
+                ?: project.findProperty("signing.arcana.release.storePassword") as? String?
+        }
     }
 
     val baseAppName = BuildTimeConfig.APPLICATION_NAME
@@ -122,7 +142,7 @@ android {
                 "login_redirect_scheme",
                 oidcRedirectSchemeBase,
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("releaseSigning")
 
             optimization {
                 enable = true
