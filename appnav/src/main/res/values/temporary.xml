@@ -7,6 +7,7 @@
     <string name="screen_arcana_invite_error_title">Could not load invite</string>
     <string name="screen_arcana_invite_error_message">We could not load this invite. Try again or open it in the browser.</string>
     <string name="screen_arcana_invite_accept_error_message">We could not accept this invite. Please try again.</string>
+    <string name="screen_arcana_invite_own_invite_message">You can\'t accept your own invite. Share this link with someone else.</string>
     <string name="screen_arcana_invite_room_label">Chat</string>
     <string name="screen_arcana_invite_inviter_label">Invited by</string>
     <string name="screen_arcana_invite_expires_label">Expires</string>

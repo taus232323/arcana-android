@@ -98,6 +98,7 @@ class RootFlowNode(
     private val signedOutEntryPoint: SignedOutEntryPoint,
     private val accountSelectEntryPoint: AccountSelectEntryPoint,
     private val intentResolver: IntentResolver,
+    private val inviteRepository: ArcanaInviteRepository,
     private val oidcActionFlow: OidcActionFlow,
     private val featureFlagService: FeatureFlagService,
     private val announcementService: AnnouncementService,
@@ -113,6 +114,7 @@ class RootFlowNode(
     plugins = plugins
 ) {
     private var pendingArcanaInviteRoomId: RoomId? = null
+    private var pendingArcanaInviteToken: String? = null
 
     override fun onBuilt() {
         analyticsColdStartWatcher.start()
@@ -148,6 +150,7 @@ class RootFlowNode(
                                 switchToLoggedInFlow(sessionId, navState.cacheIndex)
                                 lifecycleScope.launch {
                                     openPendingArcanaInviteRoomIfNeeded(sessionId)
+                                    acceptPendingArcanaInviteIfNeeded(sessionId)
                                 }
                             } else {
                                 tryToRestoreLatestSession(
@@ -155,6 +158,7 @@ class RootFlowNode(
                                         switchToLoggedInFlow(restoredSessionId, navState.cacheIndex)
                                         lifecycleScope.launch {
                                             openPendingArcanaInviteRoomIfNeeded(restoredSessionId)
+                                            acceptPendingArcanaInviteIfNeeded(restoredSessionId)
                                         }
                                     },
                                     onFailure = { switchToNotLoggedInFlow(null) }
@@ -382,6 +386,13 @@ class RootFlowNode(
                             }
                         }
                     }
+
+                    override fun onLoginRequired(token: String) {
+                        pendingArcanaInviteToken = token
+                        lifecycleScope.launch {
+                            switchToNotLoggedInFlow(null)
+                        }
+                    }
                 }
                 createNode<ArcanaInviteNode>(buildContext, plugins = listOf(inputs, callback))
             }
@@ -485,6 +496,23 @@ class RootFlowNode(
         attachSession(sessionId).attachRoom(
             roomIdOrAlias = roomId.toRoomIdOrAlias(),
             clearBackstack = true,
+        )
+    }
+
+    private suspend fun acceptPendingArcanaInviteIfNeeded(sessionId: SessionId) {
+        val token = pendingArcanaInviteToken ?: return
+        pendingArcanaInviteToken = null
+        inviteRepository.acceptInvite(token).fold(
+            onSuccess = { roomId ->
+                attachSession(sessionId).attachRoom(
+                    roomIdOrAlias = roomId.toRoomIdOrAlias(),
+                    clearBackstack = true,
+                )
+            },
+            onFailure = {
+                Timber.w(it, "Failed to accept pending Arcana invite")
+                pendingArcanaInviteToken = token
+            }
         )
     }
 

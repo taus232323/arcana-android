@@ -9,6 +9,7 @@ package io.element.android.appnav
 
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -17,7 +18,10 @@ internal interface ArcanaInviteApi {
     suspend fun getInvite(@Path("token") token: String): ArcanaInviteResponse
 
     @POST("api/invite/{token}/accept")
-    suspend fun acceptInvite(@Path("token") token: String): ArcanaInviteAcceptResponse
+    suspend fun acceptInvite(
+        @Path("token") token: String,
+        @Header("Authorization") authorization: String,
+    ): ArcanaInviteAcceptResponse
 }
 
 @Serializable

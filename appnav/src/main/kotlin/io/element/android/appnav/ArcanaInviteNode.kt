@@ -53,6 +53,8 @@ import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TextButton
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.libraries.matrix.api.core.RoomId
+import io.element.android.libraries.matrix.api.core.UserId
+import io.element.android.libraries.sessionstorage.api.SessionStore
 import kotlinx.coroutines.launch
 
 @ContributesNode(AppScope::class)
@@ -61,9 +63,11 @@ class ArcanaInviteNode(
     @Assisted buildContext: BuildContext,
     @Assisted plugins: List<Plugin>,
     private val inviteRepository: ArcanaInviteRepository,
+    private val sessionStore: SessionStore,
 ) : Node(buildContext, plugins = plugins) {
     interface Callback : Plugin {
         fun onInviteAccepted(roomId: RoomId)
+        fun onLoginRequired(token: String) {}
     }
 
     data class Inputs(
@@ -84,6 +88,8 @@ class ArcanaInviteNode(
         var invite by remember { mutableStateOf<ArcanaInviteDetails?>(null) }
         var acceptAction by remember { mutableStateOf<AsyncAction<Unit>>(AsyncAction.Uninitialized) }
         var acceptedRoomId by remember { mutableStateOf<RoomId?>(null) }
+        var acceptErrorMessage by remember { mutableStateOf<String?>(null) }
+        val ownInviteMessage = stringResource(R.string.screen_arcana_invite_own_invite_message)
 
         fun loadInvite() {
             scope.launch {
@@ -102,6 +108,12 @@ class ArcanaInviteNode(
 
         fun acceptInvite(details: ArcanaInviteDetails) {
             scope.launch {
+                val currentUserId = sessionStore.getLatestSession()?.userId?.let(::UserId)
+                if (currentUserId != null && details.inviterUserId == currentUserId.value) {
+                    acceptErrorMessage = ownInviteMessage
+                    return@launch
+                }
+                acceptErrorMessage = null
                 acceptAction = AsyncAction.Loading
                 acceptAction = inviteRepository.acceptInvite(details.token).fold(
                     onSuccess = { roomId ->
@@ -124,6 +136,7 @@ class ArcanaInviteNode(
             loadState = loadState,
             invite = invite,
             isAccepting = acceptAction is AsyncAction.Loading,
+            acceptErrorMessage = acceptErrorMessage,
             onPrimaryAction = {
                 invite?.let { currentInvite ->
                     if (currentInvite.isUsed && currentInvite.roomId != null) {
@@ -154,14 +167,22 @@ class ArcanaInviteNode(
                 }
             }
             is AsyncAction.Failure -> {
-                RetryDialog(
-                    content = stringResource(R.string.screen_arcana_invite_accept_error_message),
-                    onRetry = {
+                when (action.error) {
+                    is MissingSessionForInviteAcceptException -> {
+                        callback.onLoginRequired(inputs.token)
                         acceptAction = AsyncAction.Uninitialized
-                        invite?.let(::acceptInvite)
-                    },
-                    onDismiss = { acceptAction = AsyncAction.Uninitialized },
-                )
+                    }
+                    else -> {
+                        RetryDialog(
+                            content = stringResource(R.string.screen_arcana_invite_accept_error_message),
+                            onRetry = {
+                                acceptAction = AsyncAction.Uninitialized
+                                invite?.let(::acceptInvite)
+                            },
+                            onDismiss = { acceptAction = AsyncAction.Uninitialized },
+                        )
+                    }
+                }
             }
             else -> Unit
         }
@@ -189,6 +210,7 @@ private fun ArcanaInviteContent(
     loadState: ArcanaInviteLoadState,
     invite: ArcanaInviteDetails?,
     isAccepting: Boolean,
+    acceptErrorMessage: String?,
     onPrimaryAction: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit,
@@ -228,6 +250,7 @@ private fun ArcanaInviteContent(
                 modifier = modifier,
                 invite = invite ?: loadState.details,
                 isAccepting = isAccepting,
+                acceptErrorMessage = acceptErrorMessage,
                 onPrimaryAction = onPrimaryAction,
                 onOpenWeb = onOpenWeb,
                 onClose = onClose,
@@ -241,6 +264,7 @@ private fun ArcanaInviteContent(
 private fun ArcanaInviteReadyView(
     invite: ArcanaInviteDetails,
     isAccepting: Boolean,
+    acceptErrorMessage: String?,
     onPrimaryAction: () -> Unit,
     onOpenWeb: (String) -> Unit,
     onClose: () -> Unit,
@@ -297,6 +321,14 @@ private fun ArcanaInviteReadyView(
                     InviteDetailRow(
                         label = stringResource(R.string.screen_arcana_invite_expires_label),
                         value = invite.expiresAt,
+                    )
+                }
+                if (acceptErrorMessage != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = acceptErrorMessage,
+                        style = ElementTheme.typography.fontBodyMdRegular,
+                        color = ElementTheme.colors.textCriticalPrimary,
                     )
                 }
             }
@@ -421,6 +453,7 @@ internal fun ArcanaInviteReadyPreview() = ElementPreview {
             isDm = true,
         ),
         isAccepting = false,
+        acceptErrorMessage = null,
         onPrimaryAction = {},
         onOpenWeb = {},
         onClose = {},
@@ -444,6 +477,7 @@ internal fun ArcanaInviteUsedPreview() = ElementPreview {
             isDm = true,
         ),
         isAccepting = false,
+        acceptErrorMessage = null,
         onPrimaryAction = {},
         onOpenWeb = {},
         onClose = {},
@@ -468,6 +502,7 @@ internal fun ArcanaInviteLoadingPreview() = ElementPreview {
         loadState = ArcanaInviteLoadState.Loading,
         invite = null,
         isAccepting = false,
+        acceptErrorMessage = null,
         onPrimaryAction = {},
         onRetry = {},
         onClose = {},

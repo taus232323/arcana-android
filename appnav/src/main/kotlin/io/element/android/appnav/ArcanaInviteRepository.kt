@@ -9,8 +9,10 @@ package io.element.android.appnav
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.network.RetrofitFactory
+import io.element.android.libraries.sessionstorage.api.SessionStore
 import kotlin.coroutines.cancellation.CancellationException
 
 data class ArcanaInviteDetails(
@@ -30,11 +32,28 @@ interface ArcanaInviteRepository {
     suspend fun acceptInvite(token: String): Result<RoomId>
 }
 
+class MissingSessionForInviteAcceptException : IllegalStateException("No logged-in session available to accept invite")
+
 @ContributesBinding(AppScope::class)
-class DefaultArcanaInviteRepository(
-    retrofitFactory: RetrofitFactory,
-) : ArcanaInviteRepository {
-    private val api = retrofitFactory.create(ARCANA_INVITE_BASE_URL).create(ArcanaInviteApi::class.java)
+class DefaultArcanaInviteRepository : ArcanaInviteRepository {
+    private val sessionStore: SessionStore
+    private val api: ArcanaInviteApi
+
+    @Inject constructor(
+        sessionStore: SessionStore,
+        retrofitFactory: RetrofitFactory,
+    ) {
+        this.sessionStore = sessionStore
+        this.api = retrofitFactory.create(ARCANA_INVITE_BASE_URL).create(ArcanaInviteApi::class.java)
+    }
+
+    internal constructor(
+        sessionStore: SessionStore,
+        api: ArcanaInviteApi,
+    ) {
+        this.sessionStore = sessionStore
+        this.api = api
+    }
 
     override suspend fun loadInvite(token: String): Result<ArcanaInviteDetails> {
         return try {
@@ -48,7 +67,9 @@ class DefaultArcanaInviteRepository(
 
     override suspend fun acceptInvite(token: String): Result<RoomId> {
         return try {
-            Result.success(RoomId(api.acceptInvite(token).roomId))
+            val accessToken = sessionStore.getLatestSession()?.accessToken
+                ?: return Result.failure(MissingSessionForInviteAcceptException())
+            Result.success(RoomId(api.acceptInvite(token, "Bearer $accessToken").roomId))
         } catch (throwable: CancellationException) {
             throw throwable
         } catch (throwable: Throwable) {
