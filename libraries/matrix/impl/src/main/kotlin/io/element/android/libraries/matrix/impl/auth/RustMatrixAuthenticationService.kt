@@ -28,6 +28,8 @@ import io.element.android.libraries.matrix.api.auth.qrlogin.MatrixQrCodeLoginDat
 import io.element.android.libraries.matrix.api.auth.qrlogin.QrCodeLoginStep
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.matrix.api.core.UserId
+import io.element.android.libraries.matrix.api.encryption.IdentityPasswordResetHandle
+import io.element.android.libraries.matrix.api.encryption.IdentityOidcResetHandle
 import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
 import io.element.android.libraries.matrix.impl.ClientBuilderSlidingSync
 import io.element.android.libraries.matrix.impl.RustMatrixClientFactory
@@ -222,7 +224,10 @@ class RustMatrixAuthenticationService(
         }
     }
 
-    override suspend fun importCreatedSession(externalSession: ExternalSession): Result<SessionId> =
+    override suspend fun importCreatedSession(
+        externalSession: ExternalSession,
+        identityBootstrapPassword: String?,
+    ): Result<SessionId> =
         withContext(coroutineDispatchers.io) {
             runCatchingExceptions {
                 val client = currentClient ?: error("You need to call `setHomeserver()` first")
@@ -240,6 +245,12 @@ class RustMatrixAuthenticationService(
 
                 // We wait for the verification state to be known
                 matrixClient.waitForKnownVerificationState()
+
+                // Arcana: email login proves account ownership — bootstrap crypto identity so this
+                // device is cross-signed and encrypted sends are not wedged as CrossVerificationRequired.
+                if (!identityBootstrapPassword.isNullOrEmpty()) {
+                    matrixClient.ensureDeviceIdentityVerified(identityBootstrapPassword)
+                }
 
                 // And once it's ready we share it and save the actual session data
                 newMatrixClientObservers.forEach { it.invoke(matrixClient) }
@@ -448,5 +459,48 @@ class RustMatrixAuthenticationService(
             val status = sessionVerificationService.sessionVerifiedStatus.first { it != SessionVerifiedStatus.Unknown }
             Timber.d("Finished waiting for a known verification status: $status")
         } ?: Timber.w("Timed out waiting for a known verification status")
+    }
+
+    /**
+     * If the session is not verified, reset cross-signing with the account password so this device
+     * becomes the verified owner device (Arcana email-login trust model).
+     */
+    private suspend fun MatrixClient.ensureDeviceIdentityVerified(password: String) {
+        val status = sessionVerificationService.sessionVerifiedStatus.value
+        if (status.isVerified()) {
+            Timber.d("Session already verified, skipping identity bootstrap")
+            return
+        }
+        Timber.i("Session verification status is $status — bootstrapping identity after email auth")
+        val handleResult = encryptionService.startIdentityReset()
+        val handle = handleResult.getOrElse { error ->
+            Timber.e(error, "Failed to start identity reset for Arcana bootstrap")
+            return
+        }
+        when (handle) {
+            null -> {
+                // No interactive auth required — reset already completed.
+                Timber.i("Identity reset completed without interactive auth")
+            }
+            is IdentityPasswordResetHandle -> {
+                handle.resetPassword(password)
+                    .onSuccess {
+                        Timber.i("Identity bootstrap with password succeeded")
+                    }
+                    .onFailure { error ->
+                        Timber.e(error, "Identity bootstrap with password failed")
+                        handle.cancel()
+                    }
+            }
+            is IdentityOidcResetHandle -> {
+                Timber.w("Identity reset requires OIDC — cannot auto-bootstrap for Arcana email login")
+                handle.cancel()
+                return
+            }
+        }
+        withTimeoutOrNull(30.seconds) {
+            sessionVerificationService.sessionVerifiedStatus.first { it.isVerified() }
+            Timber.i("Session is verified after identity bootstrap")
+        } ?: Timber.w("Timed out waiting for verified status after identity bootstrap")
     }
 }

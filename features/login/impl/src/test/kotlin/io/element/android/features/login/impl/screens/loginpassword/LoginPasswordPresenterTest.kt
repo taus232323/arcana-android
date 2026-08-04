@@ -69,7 +69,7 @@ class LoginPasswordPresenterTest {
         createLoginPasswordPresenter(
             emailLoginService = emailLoginService,
             authenticationService = FakeMatrixAuthenticationService(
-                importCreatedSessionLambda = { Result.success(A_SESSION_ID) }
+                importCreatedSessionLambda = { _, _ -> Result.success(A_SESSION_ID) }
             ),
         ).test {
             val initialState = awaitItem()
@@ -107,7 +107,7 @@ class LoginPasswordPresenterTest {
         createLoginPasswordPresenter(
             emailLoginService = emailLoginService,
             authenticationService = FakeMatrixAuthenticationService(
-                importCreatedSessionLambda = { Result.success(A_SESSION_ID) }
+                importCreatedSessionLambda = { _, _ -> Result.success(A_SESSION_ID) }
             ),
         ).test {
             val initialState = awaitItem()
@@ -240,7 +240,7 @@ class LoginPasswordPresenterTest {
     private fun createLoginPasswordPresenter(
         initialLogin: String = "",
         authenticationService: FakeMatrixAuthenticationService = FakeMatrixAuthenticationService(
-            importCreatedSessionLambda = { Result.success(A_SESSION_ID) }
+            importCreatedSessionLambda = { _, _ -> Result.success(A_SESSION_ID) }
         ),
         emailLoginService: FakeMatrixNativeAuthService = FakeMatrixNativeAuthService(),
         accountProviderDataSource: AccountProviderDataSource = AccountProviderDataSource(FakeEnterpriseService()),

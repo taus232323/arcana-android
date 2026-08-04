@@ -258,7 +258,10 @@ class NativeRegistrationPresenter(
         ).onSuccess { result ->
             when (result) {
                 is RegistrationResult.Success -> {
-                    matrixAuthenticationService.importCreatedSession(result.externalSession)
+                    matrixAuthenticationService.importCreatedSession(
+                        externalSession = result.externalSession,
+                        identityBootstrapPassword = formState.value.password,
+                    )
                         .onSuccess { sessionId ->
                             registerAction.value = AsyncData.Success(sessionId)
                         }

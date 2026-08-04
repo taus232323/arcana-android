@@ -380,3 +380,20 @@ configurations.all {
         }
     }
 }
+
+// Prebuilt native deps (matrix-rust-sdk, etc.) ship already stripped, so AGP cannot embed
+// symbols into the AAB. Package a Play Console upload zip from merged JNI libs instead.
+val packageGplayReleaseNativeDebugSymbols by tasks.registering(Zip::class) {
+    group = "build"
+    description = "Zip native libs for Play Console native debug symbols upload (gplayRelease)"
+    archiveFileName.set("native-debug-symbols.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("outputs/native-debug-symbols/gplayRelease"))
+    from(layout.buildDirectory.dir("intermediates/merged_native_libs/gplayRelease/mergeGplayReleaseNativeLibs/out/lib")) {
+        include("arm64-v8a/**", "armeabi-v7a/**", "x86/**", "x86_64/**")
+    }
+    dependsOn("mergeGplayReleaseNativeLibs")
+}
+
+tasks.matching { it.name == "bundleGplayRelease" }.configureEach {
+    finalizedBy(packageGplayReleaseNativeDebugSymbols)
+}

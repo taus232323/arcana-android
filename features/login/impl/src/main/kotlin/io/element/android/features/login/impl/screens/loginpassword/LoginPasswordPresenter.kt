@@ -252,13 +252,20 @@ class LoginPasswordPresenter(
                 loginAction.value = AsyncData.Uninitialized
             }
             is EmailLoginResult.Success -> {
+                // Keep password for crypto identity bootstrap after email ownership was proven.
+                val identityBootstrapPassword = pendingEmailLogin.value?.password
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: formState.value.password.takeIf { it.isNotEmpty() }
                 pendingEmailLogin.value = null
                 step?.value = LoginPasswordStep.Credentials
                 formState.value = formState.value.copy(
                     password = "",
                     verificationCode = "",
                 )
-                authenticationService.importCreatedSession(result.externalSession)
+                authenticationService.importCreatedSession(
+                    externalSession = result.externalSession,
+                    identityBootstrapPassword = identityBootstrapPassword,
+                )
                     .onSuccess { sessionId ->
                         loginAction.value = AsyncData.Success(sessionId)
                     }

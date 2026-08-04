@@ -80,7 +80,7 @@ class CreateAccountPresenterTest {
         val sessionVerificationService = FakeSessionVerificationService()
         val presenter = createPresenter(
             authenticationService = FakeMatrixAuthenticationService(
-                importCreatedSessionLambda = { Result.success(A_SESSION_ID) }
+                importCreatedSessionLambda = { _, _ -> Result.success(A_SESSION_ID) }
             ),
             messageParser = FakeMessageParser(lambda),
         )
@@ -98,7 +98,7 @@ class CreateAccountPresenterTest {
     fun `present - receiving a message able to be parsed but error in importing change the state to error`() = runTest {
         val presenter = createPresenter(
             authenticationService = FakeMatrixAuthenticationService(
-                importCreatedSessionLambda = { Result.failure(AN_EXCEPTION) }
+                importCreatedSessionLambda = { _, _ -> Result.failure(AN_EXCEPTION) }
             ),
             messageParser = FakeMessageParser { anExternalSession() }
         )

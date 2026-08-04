@@ -32,7 +32,7 @@ class FakeMatrixAuthenticationService(
     var matrixClientResult: ((SessionId) -> Result<MatrixClient>)? = null,
     var loginWithQrCodeResult: (qrCodeData: MatrixQrCodeLoginData, progress: (QrCodeLoginStep) -> Unit) -> Result<SessionId> =
         lambdaRecorder<MatrixQrCodeLoginData, (QrCodeLoginStep) -> Unit, Result<SessionId>> { _, _ -> Result.success(A_SESSION_ID) },
-    private val importCreatedSessionLambda: (ExternalSession) -> Result<SessionId> = { lambdaError() },
+    private val importCreatedSessionLambda: (ExternalSession, String?) -> Result<SessionId> = { _, _ -> lambdaError() },
     private val setHomeserverResult: (String) -> Result<MatrixHomeServerDetails> = { lambdaError() },
     private val setElementClassicSessionResult: (ElementClassicSession?) -> Unit = { lambdaError() },
     private val doSecretsContainBackupKeyResult: (UserId, String, String) -> Boolean = { _, _, _ -> lambdaError() },
@@ -66,8 +66,11 @@ class FakeMatrixAuthenticationService(
         }
     }
 
-    override suspend fun importCreatedSession(externalSession: ExternalSession): Result<SessionId> = simulateLongTask {
-        return importCreatedSessionLambda(externalSession)
+    override suspend fun importCreatedSession(
+        externalSession: ExternalSession,
+        identityBootstrapPassword: String?,
+    ): Result<SessionId> = simulateLongTask {
+        return importCreatedSessionLambda(externalSession, identityBootstrapPassword)
     }
 
     override suspend fun getOidcUrl(

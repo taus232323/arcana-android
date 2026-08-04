@@ -33,8 +33,15 @@ interface MatrixAuthenticationService {
 
     /**
      * Import a session that was created using another client, for instance Element Web.
+     *
+     * @param identityBootstrapPassword When set (Arcana email login/registration), if the restored
+     * session is not cross-signed yet, reset/bootstrap crypto identity with this password so the
+     * current device becomes verified and encrypted sends are not wedged.
      */
-    suspend fun importCreatedSession(externalSession: ExternalSession): Result<SessionId>
+    suspend fun importCreatedSession(
+        externalSession: ExternalSession,
+        identityBootstrapPassword: String? = null,
+    ): Result<SessionId>
 
     /*
      * OIDC part.

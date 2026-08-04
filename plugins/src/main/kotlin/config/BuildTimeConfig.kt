@@ -16,12 +16,12 @@ object BuildTimeConfig {
     const val GOOGLE_APP_ID_NIGHTLY = "1:912726360885:android:e17435e0beb0303000427c"
 
     val METADATA_HOST_REVERSED: String? = "ru.celesteai.arcana"
-    val URL_WEBSITE: String? = null
+    val URL_WEBSITE: String? = "https://arcana.celesteai.ru"
     val URL_LOGO: String? = null
-    val URL_COPYRIGHT: String? = null
-    val URL_ACCEPTABLE_USE: String? = null
-    val URL_PRIVACY: String? = null
-    val URL_POLICY: String? = null
+    val URL_COPYRIGHT: String? = "https://arcana.celesteai.ru/terms#copyright"
+    val URL_ACCEPTABLE_USE: String? = "https://arcana.celesteai.ru/terms"
+    val URL_PRIVACY: String? = "https://arcana.celesteai.ru/privacy"
+    val URL_POLICY: String? = "https://arcana.celesteai.ru/privacy"
     val CLIENT_PERMALINK_BASE_URL: String? = "https://arcana.celesteai.ru/#/"
     val SERVICES_MAPTILER_BASE_URL: String? = null
     val SERVICES_MAPTILER_APIKEY: String? = null

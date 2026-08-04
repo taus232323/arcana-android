@@ -22,11 +22,12 @@ android {
     defaultConfig {
         buildConfigFieldStr(
             name = "URL_POLICY",
-            value = if (isEnterpriseBuild) {
-                BuildTimeConfig.URL_POLICY ?: ""
-            } else {
-                "https://element.io/cookie-policy"
-            },
+            value = BuildTimeConfig.URL_POLICY
+                ?: if (isEnterpriseBuild) {
+                    ""
+                } else {
+                    "https://element.io/cookie-policy"
+                },
         )
         buildConfigFieldStr(
             name = "BUG_REPORT_URL",
