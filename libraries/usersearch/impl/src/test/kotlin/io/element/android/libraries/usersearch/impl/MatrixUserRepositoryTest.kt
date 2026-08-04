@@ -38,6 +38,22 @@ internal class MatrixUserRepositoryTest {
     }
 
     @Test
+    fun `search - starts after two characters`() = runTest {
+        val dataSource = FakeUserListDataSource()
+        val repository = MatrixUserRepository(FakeMatrixClient(SESSION_ID), dataSource)
+
+        val result = repository.search("ta")
+
+        result.test {
+            awaitItem().also {
+                assertThat(it.isSearching).isTrue()
+                assertThat(it.results).isEqualTo(listOf(placeholderResult(UserId("@ta:example.com"))))
+            }
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
     fun `search - returns empty list if no results are found`() = runTest {
         val dataSource = FakeUserListDataSource()
         val repository = MatrixUserRepository(FakeMatrixClient(SESSION_ID), dataSource)
@@ -89,6 +105,38 @@ internal class MatrixUserRepositoryTest {
             awaitItem().also {
                 assertThat(it.isSearching).isTrue()
                 assertThat(it.results).isEqualTo(listOf(placeholderResult()))
+            }
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `search - immediately returns placeholder if search is localpart`() = runTest {
+        val dataSource = FakeUserListDataSource()
+        val repository = MatrixUserRepository(FakeMatrixClient(SESSION_ID), dataSource)
+
+        val result = repository.search("alice")
+
+        result.test {
+            awaitItem().also {
+                assertThat(it.isSearching).isTrue()
+                assertThat(it.results).isEqualTo(listOf(placeholderResult(UserId("@alice:example.com"))))
+            }
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `search - immediately returns placeholder if search is at-localpart`() = runTest {
+        val dataSource = FakeUserListDataSource()
+        val repository = MatrixUserRepository(FakeMatrixClient(SESSION_ID), dataSource)
+
+        val result = repository.search("@alice")
+
+        result.test {
+            awaitItem().also {
+                assertThat(it.isSearching).isTrue()
+                assertThat(it.results).isEqualTo(listOf(placeholderResult(UserId("@alice:example.com"))))
             }
             cancelAndConsumeRemainingEvents()
         }

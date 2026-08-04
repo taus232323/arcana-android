@@ -53,7 +53,7 @@ class DefaultMentionSpanFormatter(
         return if (displayName != null) {
             "@$displayName"
         } else {
-            userId.value
+            userId.displayNameWithAt
         }
     }
 

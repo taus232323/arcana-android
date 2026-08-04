@@ -94,7 +94,7 @@ class FakeMatrixClient(
     },
     private val getNotJoinedRoomResult: (RoomIdOrAlias, List<String>) -> Result<NotJoinedRoom> = { _, _ -> lambdaError() },
     private val clearCacheLambda: () -> Unit = { lambdaError() },
-    private val userIdServerNameLambda: () -> String = { lambdaError() },
+    private val userIdServerNameLambda: () -> String = { sessionId.value.substringAfter(":") },
     private val getUrlLambda: (String) -> Result<ByteArray> = { lambdaError() },
     private val canDeactivateAccountResult: () -> Boolean = { lambdaError() },
     private val deactivateAccountResult: (String, Boolean) -> Result<Unit> = { _, _ -> lambdaError() },

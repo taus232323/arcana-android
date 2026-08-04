@@ -272,7 +272,14 @@ private fun ArcanaInviteReadyView(
     modifier: Modifier = Modifier,
 ) {
     val inviterName = invite.inviterDisplayName
-        ?: invite.inviterUserId
+        ?: invite.inviterUserId?.let { rawId ->
+            // Hide homeserver suffix in UI: @alice:celesteai.ru -> @alice
+            if (rawId.startsWith("@") && rawId.contains(':')) {
+                "@" + rawId.removePrefix("@").substringBefore(':')
+            } else {
+                rawId
+            }
+        }
         ?: stringResource(R.string.screen_arcana_invite_unknown_inviter)
     val roomName = invite.roomName ?: stringResource(R.string.screen_arcana_invite_private_chat)
     val fallbackUrl = invite.webUrl ?: webFallbackUrl

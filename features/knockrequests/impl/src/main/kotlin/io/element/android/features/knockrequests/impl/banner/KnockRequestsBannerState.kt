@@ -22,7 +22,7 @@ data class KnockRequestsBannerState(
     val canAccept: Boolean,
     val eventSink: (KnockRequestsBannerEvents) -> Unit,
 ) {
-    val subtitle = knockRequests.singleOrNull()?.userId?.value
+    val subtitle = knockRequests.singleOrNull()?.userId?.displayNameWithAt
     val reason = knockRequests.singleOrNull()?.reason
 
     @Composable

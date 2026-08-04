@@ -27,7 +27,7 @@ class RoomMembershipContentFormatter(
     ): CharSequence? {
         val userId = membershipContent.userId
         val memberIsYou = matrixClient.isMe(userId)
-        val userDisplayNameOrId = membershipContent.userDisplayName ?: userId.value
+        val userDisplayNameOrId = membershipContent.userDisplayName ?: userId.displayNameWithAt
         val reason = membershipContent.reason?.takeIf { it.isNotBlank() }
         return when (membershipContent.change) {
             MembershipChange.JOINED -> if (memberIsYou) {

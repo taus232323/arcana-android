@@ -143,6 +143,10 @@ android {
                 oidcRedirectSchemeBase,
             )
             signingConfig = signingConfigs.getByName("releaseSigning")
+            // Package native debug symbols into the AAB for Play Console crash/ANR symbolication.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
 
             optimization {
                 enable = true
@@ -258,7 +262,10 @@ androidComponents {
             val abiCode = abiVersionCodes[name] ?: 0
             // Assigns the new version code to output.versionCode, which changes the version code
             // for only the output APK, not for the variant itself.
-            output.versionCode.set((output.versionCode.orNull ?: 0) * 10 + abiCode)
+            // AAB / universal (no ABI filter): keep VERSION_CODE as-is so Play can use values like 202608041.
+            // ABI-split APKs: VERSION_CODE * 10 + abiCode.
+            val base = output.versionCode.orNull ?: 0
+            output.versionCode.set(if (name == null) base else base * 10 + abiCode)
         }
     }
 

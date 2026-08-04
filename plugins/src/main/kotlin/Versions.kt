@@ -39,22 +39,23 @@ private const val versionYear = 26
  * Month of the version on 2 digits. Value must be in [1,12].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionMonth = 7
+private const val versionMonth = 8
 
 /**
  * Release number in the month. Value must be in [0,99].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionReleaseNumber = 2
+private const val versionReleaseNumber = 41
 
 object Versions {
     /**
      * Base version code that will be set in the Android Manifest.
      * The value will be modified at build time to add the ABI code when APK are build.
-     * AAB will have a ABI code of 0.
+     * AAB keeps this value as-is (see app/build.gradle.kts).
      * See comment above for the calculation method.
      */
-    const val VERSION_CODE = (2000 + versionYear) * 10_000 + versionMonth * 100 + versionReleaseNumber
+    // 202608041 = 2026-08-04 build 1 (must be > previous Play upload 202608040)
+    const val VERSION_CODE = 202608041
     val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber"
 
     /**

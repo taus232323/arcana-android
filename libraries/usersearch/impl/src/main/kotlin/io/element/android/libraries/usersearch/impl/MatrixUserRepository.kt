@@ -28,11 +28,19 @@ class MatrixUserRepository(
     private val dataSource: UserListDataSource
 ) : UserRepository {
     override fun search(query: String): Flow<UserSearchResultState> = flow {
-        val shouldQueryProfile = MatrixPatterns.isUserId(query) && !client.isMe(UserId(query))
-        val shouldFetchSearchResults = query.length >= MINIMUM_SEARCH_LENGTH
-        // If the search term is a MXID that's not ours, we'll show a 'fake' result for that user, then update it when we get search results.
+        val trimmed = query.trim()
+        val shouldFetchSearchResults = trimmed.length >= MINIMUM_SEARCH_LENGTH
+        // Resolve alice / @alice / @alice:server once the query is long enough (or already a full MXID).
+        val resolvedUserId = when {
+            MatrixPatterns.isUserId(trimmed) -> UserId(trimmed)
+            shouldFetchSearchResults -> resolveLocalpartUserId(trimmed)
+            else -> null
+        }
+        val shouldQueryProfile = resolvedUserId != null && !client.isMe(resolvedUserId)
+        // Always offer a direct hit for @user / user / @user:server so search works
+        // without waiting on (or depending entirely on) the user directory API.
         val fakeSearchResult = if (shouldQueryProfile) {
-            UserSearchResult(MatrixUser(UserId(query)))
+            UserSearchResult(MatrixUser(resolvedUserId))
         } else {
             null
         }
@@ -40,36 +48,54 @@ class MatrixUserRepository(
             emit(UserSearchResultState(isSearching = shouldFetchSearchResults, results = listOfNotNull(fakeSearchResult)))
         }
         if (shouldFetchSearchResults) {
-            val results = fetchSearchResults(query, shouldQueryProfile)
+            val results = fetchSearchResults(trimmed, resolvedUserId, shouldQueryProfile)
             emit(results)
         }
     }
 
-    private suspend fun fetchSearchResults(query: String, shouldQueryProfile: Boolean): UserSearchResultState {
+    private suspend fun fetchSearchResults(
+        query: String,
+        resolvedUserId: UserId?,
+        shouldQueryProfile: Boolean,
+    ): UserSearchResultState {
         // Debounce
         delay(DEBOUNCE_TIME_MILLIS)
+        // Directory may match on localpart; also try without a leading '@'.
+        val directoryQuery = query.trim().removePrefix("@")
         val results = dataSource
-            .search(query, MAXIMUM_SEARCH_RESULTS)
+            .search(directoryQuery, MAXIMUM_SEARCH_RESULTS)
             .filter { !client.isMe(it.userId) }
             .map { UserSearchResult(it) }
             .toMutableList()
 
-        // If the query is another user's MXID and the result doesn't contain that user ID, query the profile information explicitly
-        if (shouldQueryProfile && results.none { it.matrixUser.userId.value == query }) {
+        // If the query resolves to another user's MXID and the result doesn't contain that user ID, query the profile explicitly
+        if (shouldQueryProfile && resolvedUserId != null && results.none { it.matrixUser.userId == resolvedUserId }) {
             results.add(
                 0,
-                dataSource.getProfile(UserId(query))
+                dataSource.getProfile(resolvedUserId)
                     ?.let { UserSearchResult(it) }
-                    ?: UserSearchResult(MatrixUser(UserId(query)), isUnresolved = true)
+                    ?: UserSearchResult(MatrixUser(resolvedUserId), isUnresolved = true)
             )
         }
 
         return UserSearchResultState(results = results, isSearching = false)
     }
 
+    /**
+     * Resolve `alice` or `@alice` to a full [UserId] on this homeserver.
+     */
+    private fun resolveLocalpartUserId(query: String): UserId? {
+        val localpart = query.removePrefix("@")
+        if (localpart.isEmpty() || localpart.contains(':') || localpart.contains(' ')) {
+            return null
+        }
+        val fullId = "@$localpart:${client.userIdServerName()}"
+        return fullId.takeIf { MatrixPatterns.isUserId(it) }?.let(::UserId)
+    }
+
     companion object {
         private const val DEBOUNCE_TIME_MILLIS = 250L
-        private const val MINIMUM_SEARCH_LENGTH = 3
+        private const val MINIMUM_SEARCH_LENGTH = 2
         private const val MAXIMUM_SEARCH_RESULTS = 10L
     }
 }
