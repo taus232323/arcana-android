@@ -12,6 +12,10 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.roomlist.aRoomListRoomSummaryList
+import io.element.android.libraries.architecture.AsyncAction
+import io.element.android.libraries.matrix.api.core.RoomId
+import io.element.android.libraries.matrix.ui.components.aMatrixUser
+import io.element.android.libraries.usersearch.api.UserSearchResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -24,6 +28,15 @@ class RoomListSearchStateProvider : PreviewParameterProvider<RoomListSearchState
                 query = "Test",
                 results = aRoomListRoomSummaryList()
             ),
+            aRoomListSearchState(
+                isSearchActive = true,
+                query = "alice",
+                results = aRoomListRoomSummaryList(),
+                userResults = persistentListOf(
+                    UserSearchResult(aMatrixUser()),
+                    UserSearchResult(aMatrixUser("@bob:example.com"), isUnresolved = true),
+                ),
+            ),
         )
 }
 
@@ -31,10 +44,16 @@ fun aRoomListSearchState(
     isSearchActive: Boolean = false,
     query: String = "",
     results: ImmutableList<RoomListRoomSummary> = persistentListOf(),
+    userResults: ImmutableList<UserSearchResult> = persistentListOf(),
+    isSearchingUsers: Boolean = false,
+    startDmAction: AsyncAction<RoomId> = AsyncAction.Uninitialized,
     eventSink: (RoomListSearchEvent) -> Unit = { },
 ) = RoomListSearchState(
     isSearchActive = isSearchActive,
     query = TextFieldState(initialText = query),
     results = results,
+    userResults = userResults,
+    isSearchingUsers = isSearchingUsers,
+    startDmAction = startDmAction,
     eventSink = eventSink,
 )

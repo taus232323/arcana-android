@@ -6,6 +6,5 @@
   -->
 
 <resources>
-    <string name="common_black">"Black"</string>
-    <string name="common_invite_unknown_profile_arcana">"This Arcana username can\'t be found, so the invite might not be received."</string>
+    <string name="common_invite_unknown_profile_arcana">"Имя пользователя Arcana не найдено, приглашение может быть не получено."</string>
 </resources>

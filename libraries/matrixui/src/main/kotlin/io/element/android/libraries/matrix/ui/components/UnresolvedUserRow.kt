@@ -81,7 +81,7 @@ fun UnresolvedUserRow(
                     tint = if (enabled) ElementTheme.colors.iconCriticalPrimary else ElementTheme.colors.iconDisabled,
                 )
                 Text(
-                    text = stringResource(CommonStrings.common_invite_unknown_profile),
+                    text = stringResource(CommonStrings.common_invite_unknown_profile_arcana),
                     color = if (enabled) ElementTheme.colors.textSecondary else ElementTheme.colors.textDisabled,
                     style = ElementTheme.typography.fontBodySmRegular.copy(lineHeight = 16.sp),
                 )

@@ -12,6 +12,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,21 +37,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.tokens.generated.CompoundIcons
+import io.element.android.features.home.impl.R
 import io.element.android.features.home.impl.components.RoomSummaryRow
 import io.element.android.features.home.impl.contentType
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.roomlist.RoomListEvent
+import io.element.android.features.startchat.api.ConfirmingStartDmWithMatrixUser
+import io.element.android.libraries.designsystem.components.async.AsyncActionView
+import io.element.android.libraries.designsystem.components.async.AsyncActionViewDefaults
+import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.components.button.BackButton
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.theme.components.FilledTextField
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.IconButton
+import io.element.android.libraries.designsystem.theme.components.ListSectionHeader
 import io.element.android.libraries.designsystem.theme.components.Scaffold
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.designsystem.utils.OnVisibleRangeChangeEffect
 import io.element.android.libraries.matrix.api.core.RoomId
+import io.element.android.libraries.matrix.ui.components.CreateDmConfirmationBottomSheet
+import io.element.android.libraries.matrix.ui.components.MatrixUserRow
+import io.element.android.libraries.matrix.ui.components.UnresolvedUserRow
+import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.ui.strings.CommonStrings
+import io.element.android.libraries.usersearch.api.UserSearchResult
 
 @Composable
 internal fun RoomListSearchView(
@@ -160,25 +172,107 @@ private fun RoomListSearchContent(
             OnVisibleRangeChangeEffect(lazyListState) { visibleRange ->
                 state.eventSink(RoomListSearchEvent.UpdateVisibleRange(visibleRange))
             }
+            val showSectionHeaders = state.results.isNotEmpty() && state.userResults.isNotEmpty()
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier.weight(1f),
             ) {
-                items(
-                    items = state.results,
-                    contentType = { room -> room.contentType() },
-                ) { room ->
-                    RoomSummaryRow(
-                        room = room,
-                        hideInviteAvatars = hideInvitesAvatars,
-                        // TODO
-                        isInviteSeen = false,
-                        onClick = ::onRoomClick,
-                        eventSink = eventSink,
-                    )
+                if (state.results.isNotEmpty()) {
+                    if (showSectionHeaders) {
+                        item(key = "chats_header") {
+                            ListSectionHeader(
+                                title = stringResource(id = R.string.screen_home_tab_chats),
+                                hasDivider = false,
+                            )
+                        }
+                    }
+                    items(
+                        items = state.results,
+                        key = { it.roomId.value },
+                        contentType = { room -> room.contentType() },
+                    ) { room ->
+                        RoomSummaryRow(
+                            room = room,
+                            hideInviteAvatars = hideInvitesAvatars,
+                            // TODO
+                            isInviteSeen = false,
+                            onClick = ::onRoomClick,
+                            eventSink = eventSink,
+                        )
+                    }
+                }
+                if (state.userResults.isNotEmpty()) {
+                    item(key = "people_header") {
+                        ListSectionHeader(
+                            title = stringResource(id = CommonStrings.common_people),
+                            hasDivider = showSectionHeaders,
+                        )
+                    }
+                    items(
+                        items = state.userResults,
+                        key = { it.matrixUser.userId.value },
+                    ) { userResult ->
+                        SearchUserResultRow(
+                            searchResult = userResult,
+                            onClick = {
+                                state.eventSink(RoomListSearchEvent.StartDM(userResult.matrixUser))
+                            },
+                        )
+                    }
                 }
             }
         }
+    }
+
+    AsyncActionView(
+        async = state.startDmAction,
+        progressDialog = {
+            AsyncActionViewDefaults.ProgressDialog(
+                progressText = stringResource(CommonStrings.common_starting_chat),
+            )
+        },
+        onSuccess = { roomId ->
+            state.eventSink(RoomListSearchEvent.ToggleSearchVisibility)
+            onRoomClick(roomId)
+        },
+        errorMessage = { stringResource(CommonStrings.common_error) },
+        onRetry = { state.eventSink(RoomListSearchEvent.CancelStartDM) },
+        onErrorDismiss = { state.eventSink(RoomListSearchEvent.CancelStartDM) },
+        confirmationDialog = { data ->
+            if (data is ConfirmingStartDmWithMatrixUser) {
+                CreateDmConfirmationBottomSheet(
+                    matrixUser = data.matrixUser,
+                    isUserIdentityUnknown = data.isUserIdentityUnknown,
+                    onSendInvite = {
+                        state.eventSink(RoomListSearchEvent.StartDM(data.matrixUser))
+                    },
+                    onDismiss = {
+                        state.eventSink(RoomListSearchEvent.CancelStartDM)
+                    },
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun SearchUserResultRow(
+    searchResult: UserSearchResult,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (searchResult.isUnresolved) {
+        UnresolvedUserRow(
+            modifier = modifier.clickable(onClick = onClick),
+            avatarData = searchResult.matrixUser.getAvatarData(AvatarSize.UserListItem),
+            id = searchResult.matrixUser.userId.displayNameWithAt,
+        )
+    } else {
+        MatrixUserRow(
+            modifier = modifier.clickable(onClick = onClick),
+            matrixUser = searchResult.matrixUser,
+            avatarSize = AvatarSize.UserListItem,
+        )
     }
 }
 

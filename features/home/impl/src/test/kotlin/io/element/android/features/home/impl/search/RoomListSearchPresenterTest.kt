@@ -10,6 +10,8 @@ package io.element.android.features.home.impl.search
 
 import com.google.common.truth.Truth.assertThat
 import io.element.android.features.home.impl.datasource.aRoomListRoomSummaryFactory
+import io.element.android.features.invitepeople.test.FakeStartDMAction
+import io.element.android.features.startchat.api.StartDMAction
 import io.element.android.libraries.dateformatter.test.FakeDateFormatter
 import io.element.android.libraries.eventformatter.test.FakeRoomLatestEventFormatter
 import io.element.android.libraries.matrix.api.roomlist.RoomListFilter
@@ -17,6 +19,8 @@ import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.test.room.aRoomSummary
 import io.element.android.libraries.matrix.test.roomlist.FakeDynamicRoomList
 import io.element.android.libraries.matrix.test.roomlist.FakeRoomListService
+import io.element.android.libraries.usersearch.api.UserRepository
+import io.element.android.libraries.usersearch.test.FakeUserRepository
 import io.element.android.tests.testutils.lambda.assert
 import io.element.android.tests.testutils.lambda.lambdaRecorder
 import io.element.android.tests.testutils.test
@@ -144,6 +148,8 @@ class RoomListSearchPresenterTest {
 
 fun TestScope.createRoomListSearchPresenter(
     roomListService: RoomListService = FakeRoomListService(),
+    userRepository: UserRepository = FakeUserRepository(),
+    startDMAction: StartDMAction = FakeStartDMAction(),
 ): RoomListSearchPresenter {
     return RoomListSearchPresenter(
         dataSourceFactory = object : RoomListSearchDataSource.Factory {
@@ -158,6 +164,8 @@ fun TestScope.createRoomListSearchPresenter(
                     coroutineScope = coroutineScope,
                 )
             }
-        }
+        },
+        userRepository = userRepository,
+        startDMAction = startDMAction,
     )
 }

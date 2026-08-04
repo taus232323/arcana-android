@@ -58,6 +58,8 @@ dependencies {
     implementation(libs.haze.materials)
     implementation(projects.features.reportroom.api)
     implementation(projects.features.rolesandpermissions.api)
+    implementation(projects.features.startchat.api)
+    implementation(projects.libraries.usersearch.api)
     implementation(projects.libraries.previewutils)
     api(projects.features.home.api)
 
@@ -66,6 +68,8 @@ dependencies {
     testImplementation(projects.features.invite.test)
     testImplementation(projects.features.logout.test)
     testImplementation(projects.features.networkmonitor.test)
+    testImplementation(projects.features.startchat.test)
+    testImplementation(projects.libraries.usersearch.test)
     testImplementation(projects.libraries.matrix.test)
     testImplementation(projects.libraries.featureflag.test)
     testImplementation(projects.libraries.dateformatter.test)
