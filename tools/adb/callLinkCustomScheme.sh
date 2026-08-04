@@ -7,8 +7,8 @@
 # Please see LICENSE files in the repository root for full details.
 
 # Format is:
-# element://call?url=some-encoded-url
+# arcana://call?url=some-encoded-url
 # For instance
-# element://call?url=https%3A%2F%2Fcall.element.io%2FTestElementCall
+# arcana://call?url=https%3A%2F%2Fcall.element.io%2FTestElementCall
 
-adb shell am start -a android.intent.action.VIEW -d element://call?url=https%3A%2F%2Fcall.element.io%2FTestElementCall
+adb shell am start -a android.intent.action.VIEW -d arcana://call?url=https%3A%2F%2Fcall.element.io%2FTestElementCall

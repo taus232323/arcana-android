@@ -55,7 +55,7 @@ class IntentResolver(
             .takeIf { it.action == Intent.ACTION_VIEW }
             ?.dataString
 
-        // Mobile configuration link clicked? (mobile.element.io)
+        // Mobile configuration link clicked? (legacy mobile.element.io links, if received)
         val mobileLoginData = actionViewData
             ?.let { loginIntentResolver.parse(it) }
         if (mobileLoginData != null) return ResolvedIntent.Login(mobileLoginData)
@@ -64,7 +64,7 @@ class IntentResolver(
             ?.let { parseArcanaInvite(it) }
         if (arcanaInviteData != null) return arcanaInviteData
 
-        // External link clicked? (matrix.to, element.io, etc.)
+        // External link clicked? (matrix.to, arcana permalinks, etc.)
         val permalinkData = actionViewData
             ?.let { permalinkParser.parse(it) }
             ?.takeIf { it !is PermalinkData.FallbackLink }

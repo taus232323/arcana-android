@@ -48,13 +48,13 @@ class DefaultMatrixToConverterTest {
 
     @Test
     fun `converting url coming from the matrix-to website returns a matrix-to url for room case`() {
-        val url = Uri.parse("element://room/#element-android:matrix.org")
+        val url = Uri.parse("arcana://room/#element-android:matrix.org")
         assertThat(DefaultMatrixToConverter().convert(url)).isEqualTo(Uri.parse("https://matrix.to/#/#element-android:matrix.org"))
     }
 
     @Test
     fun `converting url coming from the matrix-to website returns a matrix-to url for user case`() {
-        val url = Uri.parse("element://user/@alice:matrix.org")
+        val url = Uri.parse("arcana://user/@alice:matrix.org")
         assertThat(DefaultMatrixToConverter().convert(url)).isEqualTo(Uri.parse("https://matrix.to/#/@alice:matrix.org"))
     }
 }

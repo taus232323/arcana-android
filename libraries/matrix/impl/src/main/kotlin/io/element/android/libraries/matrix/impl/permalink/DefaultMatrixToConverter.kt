@@ -26,16 +26,16 @@ class DefaultMatrixToConverter : MatrixToConverter {
      * To be successfully converted, URL path should contain one of the [SUPPORTED_PATHS].
      * Examples:
      * - https://riot.im/develop/#/room/#element-android:matrix.org  ->  https://matrix.to/#/#element-android:matrix.org
-     * - https://app.element.io/#/room/#element-android:matrix.org   ->  https://matrix.to/#/#element-android:matrix.org
+     * - https://arcana.celesteai.ru/#/room/#element-android:matrix.org ->  https://matrix.to/#/#element-android:matrix.org
      * - https://www.example.org/#/room/#element-android:matrix.org  ->  https://matrix.to/#/#element-android:matrix.org
      * Also convert links coming from the matrix.to website:
-     * - element://room/#element-android:matrix.org                  ->  https://matrix.to/#/#element-android:matrix.org
-     * - element://user/@alice:matrix.org                            ->  https://matrix.to/#/@alice:matrix.org
+     * - arcana://room/#element-android:matrix.org                   ->  https://matrix.to/#/#element-android:matrix.org
+     * - arcana://user/@alice:matrix.org                             ->  https://matrix.to/#/@alice:matrix.org
      */
     override fun convert(uri: Uri): Uri? {
         val uriString = uri.toString()
             // Handle links coming from the matrix.to website.
-            .replacePrefix(MATRIX_TO_CUSTOM_SCHEME_BASE_URL, "https://app.element.io/#/")
+            .replacePrefix(MATRIX_TO_CUSTOM_SCHEME_BASE_URL, "https://arcana.celesteai.ru/#/")
         val baseUrl = MatrixConfiguration.MATRIX_TO_PERMALINK_BASE_URL
 
         return when {
@@ -52,7 +52,7 @@ class DefaultMatrixToConverter : MatrixToConverter {
     }
 
     companion object {
-        private const val MATRIX_TO_CUSTOM_SCHEME_BASE_URL = "element://"
+        private const val MATRIX_TO_CUSTOM_SCHEME_BASE_URL = "arcana://"
         private val SUPPORTED_PATHS = listOf(
             "/#/room/",
             "/#/user/",

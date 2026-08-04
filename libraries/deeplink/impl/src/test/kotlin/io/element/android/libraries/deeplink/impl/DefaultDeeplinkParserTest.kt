@@ -29,17 +29,17 @@ import org.robolectric.RobolectricTestRunner
 class DefaultDeeplinkParserTest {
     companion object {
         const val A_URI =
-            "elementx://open/@alice:server.org"
+            "arcana://open/@alice:server.org"
         const val A_URI_WITH_ROOM =
-            "elementx://open/@alice:server.org/!aRoomId:domain"
+            "arcana://open/@alice:server.org/!aRoomId:domain"
         const val A_URI_WITH_ROOM_WITH_THREAD =
-            "elementx://open/@alice:server.org/!aRoomId:domain/\$aThreadId"
+            "arcana://open/@alice:server.org/!aRoomId:domain/\$aThreadId"
         const val A_URI_WITH_ROOM_WITH_THREAD_AND_EVENT =
-            "elementx://open/@alice:server.org/!aRoomId:domain/\$aThreadId/\$anEventId"
+            "arcana://open/@alice:server.org/!aRoomId:domain/\$aThreadId/\$anEventId"
         const val A_URI_WITH_ROOM_WITH_EVENT_AND_NO_THREAD =
-            "elementx://open/@alice:server.org/!aRoomId:domain//\$anEventId"
+            "arcana://open/@alice:server.org/!aRoomId:domain//\$anEventId"
         const val A_URI_WITH_ROOM_WITH_THREAD_AND_EVENT_AND_INVALID_CHARACTERS =
-            "elementx://open/@a%2Flice:server.org/!a%2FRoomId:domain/\$a%2FThreadId/\$an%2FEventId"
+            "arcana://open/@a%2Flice:server.org/!a%2FRoomId:domain/\$a%2FThreadId/\$an%2FEventId"
     }
 
     @Test
@@ -72,17 +72,17 @@ class DefaultDeeplinkParserTest {
         // Bad scheme
         assertThat(sut.getFromIntent(createIntent("x://open/@alice:server.org"))).isNull()
         // Bad host
-        assertThat(sut.getFromIntent(createIntent("elementx://close/@alice:server.org"))).isNull()
+        assertThat(sut.getFromIntent(createIntent("arcana://close/@alice:server.org"))).isNull()
         // No session Id
-        assertThat(sut.getFromIntent(createIntent("elementx://open"))).isNull()
+        assertThat(sut.getFromIntent(createIntent("arcana://open"))).isNull()
 
         assertThrowsInDebug {
             // Invalid sessionId
-            sut.getFromIntent(createIntent("elementx://open/alice:server.org"))
+            sut.getFromIntent(createIntent("arcana://open/alice:server.org"))
         }
         assertThrowsInDebug {
             // Empty sessionId
-            sut.getFromIntent(createIntent("elementx://open//"))
+            sut.getFromIntent(createIntent("arcana://open//"))
         }
     }
 

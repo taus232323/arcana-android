@@ -24,7 +24,7 @@ class CallIntentDataParser {
         val scheme = parsedUrl.scheme
         return when {
             scheme in validHttpSchemes -> parsedUrl
-            scheme == "element" && parsedUrl.host == "call" -> {
+            scheme == "arcana" && parsedUrl.host == "call" -> {
                 parsedUrl.getUrlParameter()
             }
             scheme == "io.element.call" && parsedUrl.host == null -> {

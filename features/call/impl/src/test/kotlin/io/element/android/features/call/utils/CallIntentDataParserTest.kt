@@ -93,13 +93,13 @@ class CallIntentDataParserTest {
     fun `element scheme with no call host returns null`() {
         val embeddedUrl = VALID_CALL_URL_WITH_PARAM
         val encodedUrl = URLEncoder.encode(embeddedUrl, "utf-8")
-        val url = "element://no-call?url=$encodedUrl"
+        val url = "arcana://no-call?url=$encodedUrl"
         assertThat(callIntentDataParser.parse(url)).isNull()
     }
 
     @Test
     fun `element scheme with no data returns null`() {
-        val url = "element://call?url="
+        val url = "arcana://call?url="
         assertThat(callIntentDataParser.parse(url)).isNull()
     }
 
@@ -211,7 +211,7 @@ class CallIntentDataParserTest {
 
         // Test embedded url, scheme 1
         val encodedUrl = URLEncoder.encode(url, "utf-8")
-        val urlScheme1 = "element://call?url=$encodedUrl"
+        val urlScheme1 = "arcana://call?url=$encodedUrl"
         assertThat(callIntentDataParser.parse(urlScheme1)).isEqualTo(expectedResult)
 
         // Test embedded url, scheme 2

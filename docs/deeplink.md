@@ -1,4 +1,4 @@
-# Element X Android deeplink
+# Arcana Android deeplink
 
 <!--- TOC -->
 
@@ -12,31 +12,37 @@
 
 ## Introduction
 
-Element X Android supports deep linking to specific screens in the application. This document explains how to use deep links in Element X Android.
+Arcana Android supports deep linking to specific screens in the application. This document explains how to use deep links in Arcana Android.
 
 ### Asset Links
 
-The asset links file is available at https://element.io/.well-known/assetlinks.json
+The asset links file is available at https://arcana.celesteai.ru/.well-known/assetlinks.json
 
 ### Supported links
 
-Element Call link: 
-> https://call.element.io/Example
+Arcana invite (App Link):
+> https://arcana.celesteai.ru/invite/<token>
 
-Link to a user:
-> https://app.element.io/#/user/@alice:matrix.org
+Arcana invite (custom scheme):
+> arcana://invite/<token>
 
-Link to a room by id or alias:
-> https://app.element.io/#/room/!roomid:matrix.org
-> https://app.element.io/#/room/#element-x-android:matrix.org
+Notification / in-app navigation:
+> arcana://open/<sessionId>
+> arcana://open/<sessionId>/<roomId>
+> arcana://open/<sessionId>/<roomId>/<threadId>
+> arcana://open/<sessionId>/<roomId>/<threadId>/<eventId>
 
-Link to a room with a specific event:
-> https://app.element.io/#/room/!roomid:matrix.org/$eventid
+Permalink custom schemes (from matrix.to):
+> arcana://user/@alice:matrix.org
+> arcana://room/!roomid:matrix.org
 
-Note that it will also work with other domain such as:
-> https://mobile.element.io
-> https://develop.element.io
-> https://staging.element.io
+Matrix URI scheme:
+> matrix:u/alice:matrix.org
+> matrix:r/roomid:matrix.org
+
+Element Call (custom schemes; widget host remains call.element.io):
+> arcana://call?url=https%3A%2F%2Fcall.element.io%2FExample
+> io.element.call:/?url=https%3A%2F%2Fcall.element.io%2FExample
 
 ## Developer tools
 
@@ -44,28 +50,28 @@ Using an Android 12 or higher emulator
 
 Ensure links verification is enabled
 ```bash
-adb shell am compat enable 175408749 io.element.android.x.debug  
+adb shell am compat enable 175408749 ru.celesteai.arcana.debug  
 ```
 
 Reset link verifications for the given package id
 ```bash
-adb shell pm set-app-links --package io.element.android.x.debug 0 all 
+adb shell pm set-app-links --package ru.celesteai.arcana.debug 0 all 
 ```
 
 Force the package id links to be verified
 ```bash
-adb shell pm verify-app-links --re-verify io.element.android.x.debug 
+adb shell pm verify-app-links --re-verify ru.celesteai.arcana.debug 
 ```
 
 Print the link verification of the package id
 ```bash
-adb shell pm get-app-links io.element.android.x.debug
+adb shell pm get-app-links ru.celesteai.arcana.debug
 ```
 
 ```
-  io.element.android.x.debug:
-    ID: e2ece472-c266-4bf0-829c-be79959a6270
-    Signatures: [B0:B0:51:DC:56:5C:81:2F:E1:7F:6F:3E:94:5B:4D:79:04:71:23:AB:0D:A6:12:86:76:9E:B2:94:91:97:13:0E]
+  ru.celesteai.arcana.debug:
+    ID: <verification-id>
+    Signatures: [<sha256-cert-fingerprint>]
     Domain verification state:
-      *.element.io: 1024
+      arcana.celesteai.ru: verified
 ```
