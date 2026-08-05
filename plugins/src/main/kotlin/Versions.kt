@@ -45,7 +45,7 @@ private const val versionMonth = 8
  * Release number in the month. Value must be in [0,99].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionReleaseNumber = 42
+private const val versionReleaseNumber = 44
 
 object Versions {
     /**
@@ -54,8 +54,8 @@ object Versions {
      * AAB keeps this value as-is (see app/build.gradle.kts).
      * See comment above for the calculation method.
      */
-    // 202608042 = 2026-08-04 build 2 (must be > previous Play upload 202608041)
-    const val VERSION_CODE = 202608042
+    // 202608044 = 2026-08-05 build 4 (must be > previous Play upload 202608043)
+    const val VERSION_CODE = 202608044
     val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber"
 
     /**
