@@ -12,5 +12,5 @@ object PushConfig {
     /**
      * Note: pusher_app_id cannot exceed 64 chars.
      */
-    const val PUSHER_APP_ID: String = "ru.celesteai.android"
+    const val PUSHER_APP_ID: String = "ru.celesteai.arcana"
 }

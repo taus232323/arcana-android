@@ -464,6 +464,10 @@ class RustMatrixAuthenticationService(
     /**
      * If the session is not verified, reset cross-signing with the account password so this device
      * becomes the verified owner device (Arcana email-login trust model).
+     *
+     * Do not block login waiting for [SessionVerifiedStatus.Verified]: that status usually only
+     * updates after sync starts, which happens after [importCreatedSession] returns. Waiting here
+     * previously hung the post-email-confirm spinner for the full 30s timeout on new / long-idle accounts.
      */
     private suspend fun MatrixClient.ensureDeviceIdentityVerified(password: String) {
         val status = sessionVerificationService.sessionVerifiedStatus.value
@@ -495,12 +499,7 @@ class RustMatrixAuthenticationService(
             is IdentityOidcResetHandle -> {
                 Timber.w("Identity reset requires OIDC — cannot auto-bootstrap for Arcana email login")
                 handle.cancel()
-                return
             }
         }
-        withTimeoutOrNull(30.seconds) {
-            sessionVerificationService.sessionVerifiedStatus.first { it.isVerified() }
-            Timber.i("Session is verified after identity bootstrap")
-        } ?: Timber.w("Timed out waiting for verified status after identity bootstrap")
     }
 }
