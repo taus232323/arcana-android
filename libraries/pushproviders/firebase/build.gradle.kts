@@ -9,6 +9,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import config.BuildTimeConfig
+import extension.readLocalProperty
 import extension.setupDependencyInjection
 import extension.testCommonDependencies
 
@@ -18,6 +19,20 @@ plugins {
 
 android {
     namespace = "io.element.android.libraries.pushproviders.firebase"
+
+    defaultConfig {
+        val firebaseApiKey = System.getenv("ARCANA_FIREBASE_API_KEY")
+            ?: readLocalProperty("firebase.apiKey")
+            ?: ""
+        if (firebaseApiKey.isEmpty()) {
+            logger.warn(
+                "firebase.apiKey / ARCANA_FIREBASE_API_KEY is not set. " +
+                    "FCM will not work until you add it to local.properties or CI secrets."
+            )
+        }
+        resValue("string", "google_api_key", firebaseApiKey)
+        resValue("string", "google_crash_reporting_api_key", firebaseApiKey)
+    }
 
     buildTypes {
         getByName("release") {

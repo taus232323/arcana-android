@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- From Firebase project arcana-celesteai / package ru.celesteai.arcana -->
+    <!--
+      Non-secret Firebase project identifiers for Arcana.
+      google_api_key / google_crash_reporting_api_key are injected at build time from
+      local.properties (firebase.apiKey) or env ARCANA_FIREBASE_API_KEY — do not commit them.
+    -->
     <string name="default_web_client_id" translatable="false"></string>
     <string name="firebase_database_url" translatable="false">https://arcana-celesteai.firebaseio.com</string>
     <string name="gcm_defaultSenderId" translatable="false">488818307130</string>
-    <string name="google_api_key" translatable="false">AIzaSyA61yra-3QCOVBU_8_M6QYE31a7F8lVlmw</string>
-    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyA61yra-3QCOVBU_8_M6QYE31a7F8lVlmw</string>
     <string name="google_storage_bucket" translatable="false">arcana-celesteai.firebasestorage.app</string>
     <string name="project_id" translatable="false" tools:ignore="UnusedResources">arcana-celesteai</string>
 </resources>
