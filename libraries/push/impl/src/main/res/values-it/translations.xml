@@ -19,8 +19,8 @@
     <item quantity="one">"Hai %d nuovo messaggio."</item>
     <item quantity="other">"Hai %d nuovi messaggi."</item>
   </plurals>
-  <string name="notification_incoming_audio_call">"📞 Chiamata in arrivo"</string>
-  <string name="notification_incoming_call">"📹 Chiamata in arrivo"</string>
+  <string name="notification_incoming_audio_call">"Chiamata in arrivo"</string>
+  <string name="notification_incoming_call">"Chiamata in arrivo"</string>
   <string name="notification_inline_reply_failed">"** Invio fallito - si prega di aprire la stanza"</string>
   <string name="notification_invitation_action_join">"Entra"</string>
   <string name="notification_invitation_action_reject">"Rifiuta"</string>

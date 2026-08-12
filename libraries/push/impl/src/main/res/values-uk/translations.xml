@@ -16,7 +16,7 @@
     <item quantity="many">"%d сповіщень"</item>
   </plurals>
   <string name="notification_fallback_content">"У вас є нові повідомлення."</string>
-  <string name="notification_incoming_call">"📹 Вхідний виклик"</string>
+  <string name="notification_incoming_call">"Вхідний виклик"</string>
   <string name="notification_inline_reply_failed">"** Не вдалося надіслати - відкрийте кімнату"</string>
   <string name="notification_invitation_action_join">"Доєднатися"</string>
   <string name="notification_invitation_action_reject">"Відхилити"</string>

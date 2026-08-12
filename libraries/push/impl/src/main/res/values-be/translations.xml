@@ -15,7 +15,7 @@
     <item quantity="few">"%d апавяшчэнні"</item>
     <item quantity="many">"%d апавяшчэнняў"</item>
   </plurals>
-  <string name="notification_incoming_call">"📹 Уваходны выклік"</string>
+  <string name="notification_incoming_call">"Уваходны выклік"</string>
   <string name="notification_inline_reply_failed">"** Не атрымалася даслаць - калі ласка, адкрыйце пакой"</string>
   <string name="notification_invitation_action_join">"Далучыцца"</string>
   <string name="notification_invitation_action_reject">"Адхіліць"</string>

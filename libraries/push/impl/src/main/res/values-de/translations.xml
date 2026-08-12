@@ -19,7 +19,7 @@
     <item quantity="one">"Du hast %d neue Nachricht."</item>
     <item quantity="other">"Du hast %d neue Nachrichten."</item>
   </plurals>
-  <string name="notification_incoming_audio_call">"📞 Eingehender Anruf"</string>
+  <string name="notification_incoming_audio_call">"Eingehender Anruf"</string>
   <string name="notification_incoming_call">"Eingehender Anruf"</string>
   <string name="notification_inline_reply_failed">"** Fehler beim Senden - bitte Chat öffnen"</string>
   <string name="notification_invitation_action_join">"Beitreten"</string>

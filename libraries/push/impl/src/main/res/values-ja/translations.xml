@@ -16,8 +16,8 @@
   <plurals name="notification_fallback_n_content">
     <item quantity="other">"新着のメッセージが%d 件あります。"</item>
   </plurals>
-  <string name="notification_incoming_audio_call">"📞 着信"</string>
-  <string name="notification_incoming_call">"📹 通話着信"</string>
+  <string name="notification_incoming_audio_call">"着信"</string>
+  <string name="notification_incoming_call">"通話着信"</string>
   <string name="notification_inline_reply_failed">"** 送信失敗 - ルームを開いてください"</string>
   <string name="notification_invitation_action_join">"参加"</string>
   <string name="notification_invitation_action_reject">"拒否"</string>

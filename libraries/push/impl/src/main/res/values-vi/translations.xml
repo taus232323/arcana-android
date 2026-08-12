@@ -16,8 +16,8 @@
   <plurals name="notification_fallback_n_content">
     <item quantity="other">"Bạn có %d tin nhắn mới."</item>
   </plurals>
-  <string name="notification_incoming_audio_call">"📞 Cuộc gọi đến"</string>
-  <string name="notification_incoming_call">"📹 Cuộc gọi đến"</string>
+  <string name="notification_incoming_audio_call">"Cuộc gọi đến"</string>
+  <string name="notification_incoming_call">"Cuộc gọi đến"</string>
   <string name="notification_inline_reply_failed">"** Không gửi được - vui lòng mở phòng"</string>
   <string name="notification_invitation_action_join">"Tham gia"</string>
   <string name="notification_invitation_action_reject">"Từ chối"</string>
