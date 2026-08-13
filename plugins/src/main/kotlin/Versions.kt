@@ -45,7 +45,7 @@ private const val versionMonth = 8
  * Release number in the month. Value must be in [0,99].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionReleaseNumber = 13
+private const val versionReleaseNumber = 14
 
 object Versions {
     /**
@@ -55,7 +55,7 @@ object Versions {
      * See comment above for the calculation method.
      */
     // 202608120 = 2026-08-12 build 0 (must be > previous Play upload 202608044)
-    const val VERSION_CODE = 202608121
+    const val VERSION_CODE = 20260814
     val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber"
 
     /**

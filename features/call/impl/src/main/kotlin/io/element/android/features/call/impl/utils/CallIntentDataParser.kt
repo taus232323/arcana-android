@@ -16,6 +16,7 @@ import dev.zacsweers.metro.Inject
 class CallIntentDataParser {
     private val validHttpSchemes = sequenceOf("https")
     private val knownHosts = sequenceOf(
+        "call.celesteai.ru",
         "call.element.io",
     )
 

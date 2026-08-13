@@ -40,9 +40,9 @@ Matrix URI scheme:
 > matrix:u/alice:matrix.org
 > matrix:r/roomid:matrix.org
 
-Element Call (custom schemes; widget host remains call.element.io):
-> arcana://call?url=https%3A%2F%2Fcall.element.io%2FExample
-> io.element.call:/?url=https%3A%2F%2Fcall.element.io%2FExample
+Element Call (custom schemes; widget host is call.celesteai.ru):
+> arcana://call?url=https%3A%2F%2Fcall.celesteai.ru%2FExample
+> io.element.call:/?url=https%3A%2F%2Fcall.celesteai.ru%2FExample
 
 ## Developer tools
 

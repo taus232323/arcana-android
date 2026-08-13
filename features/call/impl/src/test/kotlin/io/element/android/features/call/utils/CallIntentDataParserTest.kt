@@ -58,6 +58,14 @@ class CallIntentDataParserTest {
     }
 
     @Test
+    fun `Arcana Call urls will be returned as is`() {
+        doTest(
+            url = "https://call.celesteai.ru",
+            expectedResult = "https://call.celesteai.ru#?$EXTRA_PARAMS"
+        )
+    }
+
+    @Test
     fun `Element Call urls will be returned as is`() {
         doTest(
             url = "https://call.element.io",
