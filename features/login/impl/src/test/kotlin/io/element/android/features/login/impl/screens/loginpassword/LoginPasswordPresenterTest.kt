@@ -104,10 +104,14 @@ class LoginPasswordPresenterTest {
                 )
             }
         )
+        var capturedBootstrapPassword: String? = null
         createLoginPasswordPresenter(
             emailLoginService = emailLoginService,
             authenticationService = FakeMatrixAuthenticationService(
-                importCreatedSessionLambda = { _, _ -> Result.success(A_SESSION_ID) }
+                importCreatedSessionLambda = { _, identityBootstrapPassword ->
+                    capturedBootstrapPassword = identityBootstrapPassword
+                    Result.success(A_SESSION_ID)
+                }
             ),
         ).test {
             val initialState = awaitItem()
@@ -127,6 +131,7 @@ class LoginPasswordPresenterTest {
             val loggedInState = awaitItem()
             assertThat(loggedInState.loginAction).isEqualTo(AsyncData.Success(A_SESSION_ID))
             assertThat(loggedInState.pendingEmailLogin).isNull()
+            assertThat(capturedBootstrapPassword).isEqualTo(A_PASSWORD)
         }
     }
 

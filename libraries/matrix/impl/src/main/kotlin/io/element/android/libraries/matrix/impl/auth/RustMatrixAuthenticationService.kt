@@ -28,8 +28,9 @@ import io.element.android.libraries.matrix.api.auth.qrlogin.MatrixQrCodeLoginDat
 import io.element.android.libraries.matrix.api.auth.qrlogin.QrCodeLoginStep
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.matrix.api.core.UserId
-import io.element.android.libraries.matrix.api.encryption.IdentityPasswordResetHandle
 import io.element.android.libraries.matrix.api.encryption.IdentityOidcResetHandle
+import io.element.android.libraries.matrix.api.encryption.IdentityPasswordResetHandle
+import io.element.android.libraries.matrix.api.sync.SyncState
 import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
 import io.element.android.libraries.matrix.impl.ClientBuilderSlidingSync
 import io.element.android.libraries.matrix.impl.RustMatrixClientFactory
@@ -243,18 +244,17 @@ class RustMatrixAuthenticationService(
                 client.restoreSession(sessionData.toSession())
                 val matrixClient = rustMatrixClientFactory.create(client)
 
-                // We wait for the verification state to be known
-                matrixClient.waitForKnownVerificationState()
+                // Start sync before identity bootstrap. Cross-signing reset requires E2EE
+                // initialisation, which only happens after the first sync. Waiting for a known
+                // verification status *before* sync previously timed out and left the device unsigned.
+                newMatrixClientObservers.forEach { it.invoke(matrixClient) }
+                sessionStore.addSession(sessionData)
 
                 // Arcana: email login proves account ownership — bootstrap crypto identity so this
-                // device is cross-signed and encrypted sends are not wedged as CrossVerificationRequired.
+                // device is cross-signed and encrypted sends are not wedged as unsigned-device failures.
                 if (!identityBootstrapPassword.isNullOrEmpty()) {
                     matrixClient.ensureDeviceIdentityVerified(identityBootstrapPassword)
                 }
-
-                // And once it's ready we share it and save the actual session data
-                newMatrixClientObservers.forEach { it.invoke(matrixClient) }
-                sessionStore.addSession(sessionData)
 
                 // Clean up the strong reference held here since it's no longer necessary
                 currentClient = null
@@ -465,12 +465,15 @@ class RustMatrixAuthenticationService(
      * If the session is not verified, reset cross-signing with the account password so this device
      * becomes the verified owner device (Arcana email-login trust model).
      *
-     * Do not block login waiting for [SessionVerifiedStatus.Verified]: that status usually only
-     * updates after sync starts, which happens after [importCreatedSession] returns. Waiting here
-     * previously hung the post-email-confirm spinner for the full 30s timeout on new / long-idle accounts.
+     * Must run after sync has started: E2EE initialisation (and therefore a real verification
+     * status) only happens then. Do not wait for [SessionVerifiedStatus.Verified] after the reset —
+     * that status can lag until a later sync and previously hung the email-confirm spinner.
      */
     private suspend fun MatrixClient.ensureDeviceIdentityVerified(password: String) {
-        val status = sessionVerificationService.sessionVerifiedStatus.value
+        val status = withTimeoutOrNull(15.seconds) {
+            syncService.syncState.first { it == SyncState.Running }
+            sessionVerificationService.sessionVerifiedStatus.first { it != SessionVerifiedStatus.Unknown }
+        } ?: sessionVerificationService.sessionVerifiedStatus.value
         if (status.isVerified()) {
             Timber.d("Session already verified, skipping identity bootstrap")
             return
@@ -487,14 +490,22 @@ class RustMatrixAuthenticationService(
                 Timber.i("Identity reset completed without interactive auth")
             }
             is IdentityPasswordResetHandle -> {
-                handle.resetPassword(password)
-                    .onSuccess {
-                        Timber.i("Identity bootstrap with password succeeded")
-                    }
-                    .onFailure { error ->
-                        Timber.e(error, "Identity bootstrap with password failed")
-                        handle.cancel()
-                    }
+                val resetResult = withTimeoutOrNull(15.seconds) {
+                    handle.resetPassword(password)
+                }
+                if (resetResult == null) {
+                    Timber.e("Identity bootstrap with password timed out")
+                    handle.cancel()
+                } else {
+                    resetResult
+                        .onSuccess {
+                            Timber.i("Identity bootstrap with password succeeded")
+                        }
+                        .onFailure { error ->
+                            Timber.e(error, "Identity bootstrap with password failed")
+                            handle.cancel()
+                        }
+                }
             }
             is IdentityOidcResetHandle -> {
                 Timber.w("Identity reset requires OIDC — cannot auto-bootstrap for Arcana email login")

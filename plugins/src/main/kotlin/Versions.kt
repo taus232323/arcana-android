@@ -54,8 +54,10 @@ object Versions {
      * AAB keeps this value as-is (see app/build.gradle.kts).
      * See comment above for the calculation method.
      */
-    // 202608120 = 2026-08-12 build 0 (must be > previous Play upload 202608044)
-    const val VERSION_CODE = 20260814
+    // Must stay above Play's existing APK 202608121 (ABI split of 20260812).
+    // AAB is uploaded as-is; ABI APKs become VERSION_CODE * 10 + abi, so do not
+    // pick a value that looks like a previous split (…1/…2/…3/…4).
+    const val VERSION_CODE = 202608140
     val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber"
 
     /**
