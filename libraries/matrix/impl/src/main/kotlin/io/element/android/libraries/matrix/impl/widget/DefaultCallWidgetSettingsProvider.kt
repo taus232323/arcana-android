@@ -51,13 +51,12 @@ class DefaultCallWidgetSettingsProvider(
             rageshakeSubmitUrl = callAnalyticsCredentialsProvider.rageshakeSubmitUrl,
             sentryDsn = callAnalyticsCredentialsProvider.sentryDsn.takeIf { isAnalyticsEnabled },
             sentryEnvironment = if (buildMeta.buildType == BuildType.RELEASE) "RELEASE" else "DEBUG",
-            parentUrl = null,
+            // Element Call treats the page as a widget only when both widgetId and parentUrl are set.
+            parentUrl = baseUrl,
         )
         val config = VirtualElementCallWidgetConfig(
-//            // TODO remove this once we have the next EC version
-//            preload = false,
-//            // TODO remove this once we have the next EC version
-//            skipLobby = null,
+            skipLobby = true,
+            appPrompt = false,
             intent = when {
                 direct && hasActiveCall -> {
                     if (isAudioCall) CallIntent.JOIN_EXISTING_DM_VOICE else CallIntent.JOIN_EXISTING_DM

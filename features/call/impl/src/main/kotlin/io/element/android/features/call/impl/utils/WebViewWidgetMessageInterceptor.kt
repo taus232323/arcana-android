@@ -9,6 +9,7 @@
 package io.element.android.features.call.impl.utils
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.webkit.JavascriptInterface
 import android.webkit.SslErrorHandler
@@ -24,6 +25,7 @@ import androidx.webkit.WebViewFeature
 import io.element.android.features.call.impl.BuildConfig
 import kotlinx.coroutines.flow.MutableSharedFlow
 import timber.log.Timber
+import java.io.ByteArrayInputStream
 
 class WebViewWidgetMessageInterceptor(
     private val webView: WebView,
@@ -35,6 +37,10 @@ class WebViewWidgetMessageInterceptor(
         // 'listenerName' so they can both receive the data from the WebView when
         // `${LISTENER_NAME}.postMessage(...)` is called
         const val LISTENER_NAME = "elementX"
+
+        // Huawei WebView is stuck on Chromium 114 and cannot be updated.
+        // addWebMessageListener is only reliable from Chromium 119.
+        private const val MIN_CHROMIUM_VERSION_FOR_WEB_MESSAGE_LISTENER = 119
     }
 
     // It's important to have extra capacity here to make sure we don't drop any messages
@@ -131,35 +137,45 @@ class WebViewWidgetMessageInterceptor(
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest): WebResourceResponse? {
-                return assetLoader.shouldInterceptRequest(request.url)
+                return interceptAssetRequest(assetLoader, request.url)
             }
 
             @Suppress("OVERRIDE_DEPRECATION")
             override fun shouldInterceptRequest(view: WebView?, url: String): WebResourceResponse? {
-                return assetLoader.shouldInterceptRequest(url.toUri())
+                return interceptAssetRequest(assetLoader, url.toUri())
             }
         }
 
-        // Create a WebMessageListener, which will receive messages from the WebView and reply to them
-        val webMessageListener = WebViewCompat.WebMessageListener { _, message, _, _, _ ->
-            onMessageReceived(message.data)
-        }
+        // Always register JavascriptInterface as the baseline message channel.
+        // This works on all WebView implementations including Huawei.
+        webView.addJavascriptInterface(object {
+            @JavascriptInterface
+            fun postMessage(json: String?) {
+                onMessageReceived(json)
+            }
+        }, LISTENER_NAME)
 
-        // Use WebMessageListener if supported, otherwise use JavascriptInterface
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+        // Additionally register WebMessageListener on WebViews that reliably support it.
+        // Huawei WebView (Chromium < 119) reports WEB_MESSAGE_LISTENER as supported
+        // but silently drops messages, so we only trust it on Chromium 119+.
+        // See: https://github.com/element-hq/element-x-android/issues/6632
+        val webViewVersionName = WebViewCompat.getCurrentWebViewPackage(webView.context)?.versionName.orEmpty()
+        Timber.d("Using WebView version: $webViewVersionName")
+        val webViewVersionCode = webViewVersionName.split(".").firstOrNull()?.toIntOrNull() ?: 0
+
+        if (webViewVersionCode >= MIN_CHROMIUM_VERSION_FOR_WEB_MESSAGE_LISTENER &&
+            WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
+        ) {
             WebViewCompat.addWebMessageListener(
                 webView,
                 LISTENER_NAME,
                 setOf("*"),
-                webMessageListener
+                WebViewCompat.WebMessageListener { _, message, _, _, _ ->
+                    onMessageReceived(message.data)
+                }
             )
         } else {
-            webView.addJavascriptInterface(object {
-                @JavascriptInterface
-                fun postMessage(json: String?) {
-                    onMessageReceived(json)
-                }
-            }, LISTENER_NAME)
+            Timber.d("Using JavascriptInterface for widget messages. WebView version=$webViewVersionName")
         }
     }
 
@@ -170,5 +186,37 @@ class WebViewWidgetMessageInterceptor(
     private fun onMessageReceived(json: String?) {
         // Here is where we would handle the messages from the WebView, passing them to the Rust SDK
         json?.let { interceptedMessages.tryEmit(it) }
+    }
+
+    private fun interceptAssetRequest(assetLoader: WebViewAssetLoader, url: Uri): WebResourceResponse? {
+        val response = assetLoader.shouldInterceptRequest(url) ?: return null
+        return injectPromisePolyfillIfIndexHtml(url, response)
+    }
+
+    private fun injectPromisePolyfillIfIndexHtml(url: Uri, response: WebResourceResponse): WebResourceResponse {
+        val path = url.path.orEmpty()
+        val isIndexHtml = path.endsWith("/index.html") || path.endsWith("/element-call") || path.endsWith("/element-call/")
+        if (!isIndexHtml) return response
+
+        val mimeType = response.mimeType ?: return response
+        if (!mimeType.contains("html", ignoreCase = true)) return response
+
+        val originalBytes = runCatching { response.data?.readBytes() }.getOrNull() ?: return response
+        val html = String(originalBytes, Charsets.UTF_8)
+        val patchedHtml = ElementCallHtmlCompat.injectPromiseWithResolversPolyfill(html)
+        if (patchedHtml != html) {
+            Timber.d("Injected Promise.withResolvers polyfill into Element Call index.html")
+        }
+        val statusCode = runCatching { response.statusCode }.getOrNull()?.takeIf { it >= 100 } ?: 200
+        val reasonPhrase = runCatching { response.reasonPhrase }.getOrNull()?.takeIf { it.isNotBlank() } ?: "OK"
+        val headers = runCatching { response.responseHeaders }.getOrNull()
+        return WebResourceResponse(
+            mimeType,
+            response.encoding ?: "utf-8",
+            statusCode,
+            reasonPhrase,
+            headers,
+            ByteArrayInputStream(patchedHtml.toByteArray(Charsets.UTF_8)),
+        )
     }
 }

@@ -155,7 +155,10 @@ class RustMatrixClientFactory(
                 strategy = if (featureFlagService.isFeatureEnabled(FeatureFlags.OnlySignedDeviceIsolationMode)) {
                     CollectStrategy.IDENTITY_BASED_STRATEGY
                 } else {
-                    CollectStrategy.ERROR_ON_VERIFIED_USER_PROBLEM
+                    // Email OTP is proof of ownership on Arcana. Do not wedge encrypted
+                    // sends (including call membership) when a verified account still has
+                    // an unsigned device.
+                    CollectStrategy.ALL_DEVICES
                 }
             )
             .decryptionSettings(

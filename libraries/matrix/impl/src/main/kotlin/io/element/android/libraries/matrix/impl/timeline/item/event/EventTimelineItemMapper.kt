@@ -185,9 +185,11 @@ private fun ShieldState?.map(): MessageShield? {
     }
     return when (shieldStateCode) {
         TimelineEventShieldStateCode.AUTHENTICITY_NOT_GUARANTEED -> MessageShield.AuthenticityNotGuaranteed(isCritical)
-        TimelineEventShieldStateCode.UNKNOWN_DEVICE -> MessageShield.UnknownDevice(isCritical)
-        TimelineEventShieldStateCode.UNSIGNED_DEVICE -> MessageShield.UnsignedDevice(isCritical)
-        TimelineEventShieldStateCode.UNVERIFIED_IDENTITY -> MessageShield.UnverifiedIdentity(isCritical)
+        // Email login is proof of ownership. Do not show Element-style
+        // "device not verified by its owner" warnings.
+        TimelineEventShieldStateCode.UNKNOWN_DEVICE,
+        TimelineEventShieldStateCode.UNSIGNED_DEVICE,
+        TimelineEventShieldStateCode.UNVERIFIED_IDENTITY -> null
         TimelineEventShieldStateCode.SENT_IN_CLEAR -> MessageShield.SentInClear(isCritical)
         TimelineEventShieldStateCode.VERIFICATION_VIOLATION -> MessageShield.VerificationViolation(isCritical)
         TimelineEventShieldStateCode.MISMATCHED_SENDER -> MessageShield.MismatchedSender(isCritical)
