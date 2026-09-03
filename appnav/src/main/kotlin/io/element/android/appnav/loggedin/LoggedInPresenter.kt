@@ -37,7 +37,6 @@ import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.api.verification.SessionVerificationService
 import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
 import io.element.android.libraries.push.api.PushService
-import io.element.android.libraries.push.api.PusherRegistrationFailure
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -72,7 +71,8 @@ class LoggedInPresenter(
                 .onEach { sessionVerifiedStatus ->
                     when (sessionVerifiedStatus) {
                         SessionVerifiedStatus.Unknown -> Unit
-                        SessionVerifiedStatus.Verified -> {
+                        SessionVerifiedStatus.Verified,
+                        SessionVerifiedStatus.NotVerified -> {
                             Timber.tag(pusherTag.value).d("Ensure pusher is registered")
                             pushService.ensurePusherIsRegistered(matrixClient).fold(
                                 onSuccess = {
@@ -84,9 +84,6 @@ class LoggedInPresenter(
                                     pusherRegistrationState.value = AsyncData.Failure(it)
                                 },
                             )
-                        }
-                        SessionVerifiedStatus.NotVerified -> {
-                            pusherRegistrationState.value = AsyncData.Failure(PusherRegistrationFailure.AccountNotVerified())
                         }
                     }
                 }

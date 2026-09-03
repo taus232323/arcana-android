@@ -15,7 +15,6 @@ import dev.zacsweers.metro.binding
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.matrix.api.core.UserId
-import io.element.android.libraries.matrix.api.verification.SessionVerifiedStatus
 import io.element.android.libraries.push.api.GetCurrentPushProvider
 import io.element.android.libraries.push.api.PushService
 import io.element.android.libraries.push.api.PusherRegistrationFailure
@@ -32,7 +31,6 @@ import io.element.android.libraries.pushstore.api.clientsecret.PushClientSecretS
 import io.element.android.libraries.sessionstorage.api.observer.SessionListener
 import io.element.android.libraries.sessionstorage.api.observer.SessionObserver
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import timber.log.Timber
 
 @ContributesBinding(AppScope::class, binding = binding<PushService>())
@@ -89,11 +87,9 @@ class DefaultPushService(
     }
 
     override suspend fun ensurePusherIsRegistered(matrixClient: MatrixClient): Result<Unit> {
-        val verificationStatus = matrixClient.sessionVerificationService.sessionVerifiedStatus.first()
-        if (verificationStatus != SessionVerifiedStatus.Verified) {
-            return Result.failure<Unit>(PusherRegistrationFailure.AccountNotVerified())
-                .also { Timber.w("Account is not verified") }
-        }
+        // Arcana treats email+password as account ownership and skips session-verification FTUE.
+        // Do not gate pushers on SessionVerifiedStatus — otherwise restored sessions never
+        // re-register after the homeserver drops a rejected FCM token.
         Timber.d("Ensure pusher is registered")
         val currentPushProvider = getCurrentPushProvider(matrixClient.sessionId)
         val result = if (currentPushProvider == null) {

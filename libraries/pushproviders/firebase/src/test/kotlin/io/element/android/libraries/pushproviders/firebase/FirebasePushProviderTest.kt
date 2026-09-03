@@ -75,6 +75,26 @@ class FirebasePushProviderTest {
     }
 
     @Test
+    fun `register prefers a fresh Firebase token over the stored one`() = runTest {
+        val matrixClient = FakeMatrixClient()
+        val registerPusherResultLambda = lambdaRecorder<MatrixClient, String, String, Result<Unit>> { _, _, _ -> Result.success(Unit) }
+        val firebaseStore = InMemoryFirebaseStore(token = "staleToken")
+        val firebasePushProvider = createFirebasePushProvider(
+            firebaseStore = firebaseStore,
+            pusherSubscriber = FakePusherSubscriber(
+                registerPusherResult = registerPusherResultLambda
+            ),
+            firebaseTokenGetter = FakeFirebaseTokenGetter { "freshToken" },
+        )
+        val result = firebasePushProvider.registerWith(matrixClient, Distributor("value", "Name"))
+        assertThat(result).isEqualTo(Result.success(Unit))
+        assertThat(firebaseStore.getFcmToken()).isEqualTo("freshToken")
+        registerPusherResultLambda.assertions()
+            .isCalledOnce()
+            .with(value(matrixClient), value("freshToken"), value(A_FIREBASE_GATEWAY))
+    }
+
+    @Test
     fun `register ko no token`() = runTest {
         val firebasePushProvider = createFirebasePushProvider(
             firebaseStore = InMemoryFirebaseStore(
@@ -195,7 +215,8 @@ class FirebasePushProviderTest {
         pusherSubscriber: PusherSubscriber = FakePusherSubscriber(),
         isPlayServiceAvailable: IsPlayServiceAvailable = FakeIsPlayServiceAvailable(false),
         firebaseTokenRotator: FirebaseTokenRotator = FakeFirebaseTokenRotator(),
-        firebaseGatewayProvider: FirebaseGatewayProvider = FakeFirebaseGatewayProvider()
+        firebaseGatewayProvider: FirebaseGatewayProvider = FakeFirebaseGatewayProvider(),
+        firebaseTokenGetter: FirebaseTokenGetter = FakeFirebaseTokenGetter(),
     ): FirebasePushProvider {
         return FirebasePushProvider(
             firebaseStore = firebaseStore,
@@ -203,6 +224,7 @@ class FirebasePushProviderTest {
             isPlayServiceAvailable = isPlayServiceAvailable,
             firebaseTokenRotator = firebaseTokenRotator,
             firebaseGatewayProvider = firebaseGatewayProvider,
+            firebaseTokenGetter = firebaseTokenGetter,
         )
     }
 }

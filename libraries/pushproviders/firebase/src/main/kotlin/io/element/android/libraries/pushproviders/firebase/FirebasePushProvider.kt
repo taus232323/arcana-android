@@ -10,6 +10,7 @@ package io.element.android.libraries.pushproviders.firebase
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
+import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.core.log.logger.LoggerTag
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.SessionId
@@ -28,6 +29,7 @@ class FirebasePushProvider(
     private val isPlayServiceAvailable: IsPlayServiceAvailable,
     private val firebaseTokenRotator: FirebaseTokenRotator,
     private val firebaseGatewayProvider: FirebaseGatewayProvider,
+    private val firebaseTokenGetter: FirebaseTokenGetter,
 ) : PushProvider {
     override val index = FirebaseConfig.INDEX
     override val name = FirebaseConfig.NAME
@@ -40,7 +42,7 @@ class FirebasePushProvider(
     }
 
     override suspend fun registerWith(matrixClient: MatrixClient, distributor: Distributor): Result<Unit> {
-        val pushKey = firebaseStore.getFcmToken() ?: return Result.failure<Unit>(
+        val pushKey = resolvePushKey() ?: return Result.failure<Unit>(
             IllegalStateException(
                 "Unable to register pusher, Firebase token is not known."
             )
@@ -52,6 +54,15 @@ class FirebasePushProvider(
             pushKey = pushKey,
             gateway = firebaseGatewayProvider.getFirebaseGateway(),
         )
+    }
+
+    private suspend fun resolvePushKey(): String? {
+        val freshToken = runCatchingExceptions { firebaseTokenGetter.get() }.getOrNull()
+        if (freshToken != null) {
+            firebaseStore.storeFcmToken(freshToken)
+            return freshToken
+        }
+        return firebaseStore.getFcmToken()
     }
 
     override suspend fun getCurrentDistributorValue(sessionId: SessionId): String = firebaseDistributor.value
