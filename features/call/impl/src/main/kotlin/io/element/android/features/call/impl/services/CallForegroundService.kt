@@ -8,11 +8,9 @@
 
 package io.element.android.features.call.impl.services
 
-import android.Manifest
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -36,12 +34,8 @@ import timber.log.Timber
 class CallForegroundService : Service() {
     companion object {
         fun start(context: Context) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                val intent = Intent(context, CallForegroundService::class.java)
-                ContextCompat.startForegroundService(context, intent)
-            } else {
-                Timber.w("Microphone permission is not granted, cannot start the call foreground service")
-            }
+            val intent = Intent(context, CallForegroundService::class.java)
+            ContextCompat.startForegroundService(context, intent)
         }
 
         fun stop(context: Context) {
@@ -74,8 +68,8 @@ class CallForegroundService : Service() {
             .setContentIntent(pendingIntent)
             .build()
         val notificationId = NotificationIdProvider.getForegroundServiceNotificationId(ForegroundServiceType.ONGOING_CALL)
-        val serviceType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        val serviceType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
         } else {
             0
         }

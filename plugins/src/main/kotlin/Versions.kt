@@ -39,13 +39,13 @@ private const val versionYear = 26
  * Month of the version on 2 digits. Value must be in [1,12].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionMonth = 8
+private const val versionMonth = 9
 
 /**
  * Release number in the month. Value must be in [0,99].
  * Do not update this value. it is updated by the release script.
  */
-private const val versionReleaseNumber = 25
+private const val versionReleaseNumber = 8
 
 object Versions {
     /**
@@ -57,7 +57,7 @@ object Versions {
     // Must stay above Play's existing APK 202608121 (ABI split of 20260812).
     // AAB is uploaded as-is; ABI APKs become VERSION_CODE * 10 + abi, so do not
     // pick a value that looks like a previous split (…1/…2/…3/…4).
-    const val VERSION_CODE = 202608251
+    const val VERSION_CODE = 202609080
     val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber"
 
     /**

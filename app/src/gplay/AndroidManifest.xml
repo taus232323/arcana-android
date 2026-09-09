@@ -15,4 +15,10 @@
     <uses-permission
         android:name="android.permission.REQUEST_INSTALL_PACKAGES"
         tools:node="remove" />
+
+    <!-- Calls use a visible activity / PiP, not a background microphone service.
+         Strip this so Play review does not require a FOREGROUND_SERVICE_MICROPHONE declaration. -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"
+        tools:node="remove" />
 </manifest>
