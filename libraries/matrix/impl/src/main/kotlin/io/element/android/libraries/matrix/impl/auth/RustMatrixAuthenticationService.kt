@@ -46,6 +46,7 @@ import io.element.android.libraries.matrix.impl.toSession
 import io.element.android.libraries.sessionstorage.api.LoginType
 import io.element.android.libraries.sessionstorage.api.SessionStore
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -466,51 +467,98 @@ class RustMatrixAuthenticationService(
      * becomes the verified owner device (Arcana email-login trust model).
      *
      * Must run after sync has started: E2EE initialisation (and therefore a real verification
-     * status) only happens then. Do not wait for [SessionVerifiedStatus.Verified] after the reset —
-     * that status can lag until a later sync and previously hung the email-confirm spinner.
+     * status) only happens then. Retries when E2EE is not ready yet — a single failed attempt
+     * previously left the device unsigned and historical messages stuck on
+     * "verify this device". Do not block login waiting forever for [SessionVerifiedStatus.Verified]
+     * after reset; that status can lag until a later sync.
      */
     private suspend fun MatrixClient.ensureDeviceIdentityVerified(password: String) {
-        val status = withTimeoutOrNull(15.seconds) {
+        withTimeoutOrNull(20.seconds) {
             syncService.syncState.first { it == SyncState.Running }
             sessionVerificationService.sessionVerifiedStatus.first { it != SessionVerifiedStatus.Unknown }
-        } ?: sessionVerificationService.sessionVerifiedStatus.value
-        if (status.isVerified()) {
+        }
+        if (sessionVerificationService.sessionVerifiedStatus.value.isVerified()) {
             Timber.d("Session already verified, skipping identity bootstrap")
             return
         }
-        Timber.i("Session verification status is $status — bootstrapping identity after email auth")
+
+        repeat(IDENTITY_BOOTSTRAP_ATTEMPTS) { attempt ->
+            if (sessionVerificationService.sessionVerifiedStatus.value.isVerified()) {
+                return
+            }
+            Timber.i(
+                "Session verification status is ${sessionVerificationService.sessionVerifiedStatus.value} — " +
+                    "bootstrapping identity after email auth (attempt ${attempt + 1}/$IDENTITY_BOOTSTRAP_ATTEMPTS)"
+            )
+            if (bootstrapIdentityOnce(password)) {
+                // Best-effort: let verified status catch up without hanging login.
+                val verified = withTimeoutOrNull(5.seconds) {
+                    sessionVerificationService.sessionVerifiedStatus.first { it.isVerified() }
+                } != null
+                if (verified) {
+                    Timber.i("Session verified after identity bootstrap")
+                } else {
+                    Timber.w("Identity bootstrap finished but verified status not yet observed")
+                }
+                // Ensure key backup is enabled so future history can be restored on new devices.
+                encryptionService.enableBackups()
+                    .onSuccess { Timber.i("Key backup enabled after identity bootstrap") }
+                    .onFailure { error -> Timber.w(error, "Failed to enable key backup after identity bootstrap") }
+                return
+            }
+            if (attempt < IDENTITY_BOOTSTRAP_ATTEMPTS - 1) {
+                delay(IDENTITY_BOOTSTRAP_RETRY_DELAY)
+            }
+        }
+        Timber.e("Identity bootstrap failed after $IDENTITY_BOOTSTRAP_ATTEMPTS attempts — device may remain unverified")
+    }
+
+    /**
+     * @return true when identity reset completed (with or without UIAA).
+     */
+    private suspend fun MatrixClient.bootstrapIdentityOnce(password: String): Boolean {
         val handleResult = encryptionService.startIdentityReset()
         val handle = handleResult.getOrElse { error ->
             Timber.e(error, "Failed to start identity reset for Arcana bootstrap")
-            return
+            return false
         }
-        when (handle) {
+        return when (handle) {
             null -> {
                 // No interactive auth required — reset already completed.
                 Timber.i("Identity reset completed without interactive auth")
+                true
             }
             is IdentityPasswordResetHandle -> {
-                val resetResult = withTimeoutOrNull(15.seconds) {
+                val resetResult = withTimeoutOrNull(20.seconds) {
                     handle.resetPassword(password)
                 }
-                if (resetResult == null) {
-                    Timber.e("Identity bootstrap with password timed out")
-                    handle.cancel()
-                } else {
-                    resetResult
-                        .onSuccess {
-                            Timber.i("Identity bootstrap with password succeeded")
-                        }
-                        .onFailure { error ->
-                            Timber.e(error, "Identity bootstrap with password failed")
-                            handle.cancel()
-                        }
+                when {
+                    resetResult == null -> {
+                        Timber.e("Identity bootstrap with password timed out")
+                        handle.cancel()
+                        false
+                    }
+                    resetResult.isSuccess -> {
+                        Timber.i("Identity bootstrap with password succeeded")
+                        true
+                    }
+                    else -> {
+                        Timber.e(resetResult.exceptionOrNull(), "Identity bootstrap with password failed")
+                        handle.cancel()
+                        false
+                    }
                 }
             }
             is IdentityOidcResetHandle -> {
                 Timber.w("Identity reset requires OIDC — cannot auto-bootstrap for Arcana email login")
                 handle.cancel()
+                false
             }
         }
+    }
+
+    private companion object {
+        const val IDENTITY_BOOTSTRAP_ATTEMPTS = 3
+        val IDENTITY_BOOTSTRAP_RETRY_DELAY = 2.seconds
     }
 }

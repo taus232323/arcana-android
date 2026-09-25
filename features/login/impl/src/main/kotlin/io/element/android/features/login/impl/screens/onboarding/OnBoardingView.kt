@@ -27,12 +27,17 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
+import io.element.android.features.login.impl.BuildConfig
 import io.element.android.features.login.impl.R
 import io.element.android.features.login.impl.components.ArcanaMark
 import io.element.android.features.login.impl.login.LoginModeView
@@ -73,6 +78,7 @@ fun OnBoardingView(
     onLearnMoreClick: () -> Unit,
     onCreateAccountContinue: (url: String) -> Unit,
     onReportProblem: () -> Unit,
+    onOpenUrl: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val loginView = @Composable {
@@ -95,6 +101,7 @@ fun OnBoardingView(
             onSignIn = onSignIn,
             onCreateAccount = onCreateAccount,
             onReportProblem = onReportProblem,
+            onOpenUrl = onOpenUrl,
         )
     }
 
@@ -263,6 +270,7 @@ private fun OnBoardingButtons(
     onSignIn: (mustChooseAccountProvider: Boolean) -> Unit,
     onCreateAccount: (String?) -> Unit,
     onReportProblem: () -> Unit,
+    onOpenUrl: (String) -> Unit,
 ) {
     val isLoading by remember(state.loginMode) {
         derivedStateOf {
@@ -326,20 +334,79 @@ private fun OnBoardingButtons(
                     style = ElementTheme.typography.fontBodySmRegular,
                     color = ElementTheme.colors.textSecondary,
                 )
-            } else {
-                Text(
-                    modifier = Modifier
-                        .clickable {
-                            state.eventSink(OnBoardingEvents.OnVersionClick)
-                        }
-                        .padding(16.dp),
-                    text = stringResource(id = R.string.screen_onboarding_app_version, state.version),
-                    style = ElementTheme.typography.fontBodySmRegular,
-                    color = ElementTheme.colors.textSecondary,
-                )
             }
+            AuthenticationLegalNotice(
+                onOpenUrl = onOpenUrl,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp),
+            )
+            Text(
+                modifier = Modifier
+                    .clickable {
+                        state.eventSink(OnBoardingEvents.OnVersionClick)
+                    }
+                    .padding(16.dp),
+                text = stringResource(id = R.string.screen_onboarding_app_version, state.version),
+                style = ElementTheme.typography.fontBodySmRegular,
+                color = ElementTheme.colors.textSecondary,
+            )
         }
     }
+}
+
+/**
+ * Matches iOS AuthenticationStartScreen legal notice under the auth actions.
+ */
+@Composable
+private fun AuthenticationLegalNotice(
+    onOpenUrl: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val termsLink = stringResource(R.string.screen_authentication_legal_terms_link)
+    val privacyLink = stringResource(R.string.screen_authentication_legal_privacy_link)
+    val fullText = stringResource(R.string.screen_authentication_legal_notice, termsLink, privacyLink)
+    val linkStyle = SpanStyle(
+        color = ElementTheme.colors.textActionAccent,
+        textDecoration = TextDecoration.Underline,
+    )
+    val annotated = buildAnnotatedString {
+        append(fullText)
+        val termsStart = fullText.indexOf(termsLink)
+        if (termsStart >= 0) {
+            val termsEnd = termsStart + termsLink.length
+            addStyle(linkStyle, termsStart, termsEnd)
+            addLink(
+                url = LinkAnnotation.Url(
+                    url = BuildConfig.URL_ACCEPTABLE_USE,
+                    linkInteractionListener = { onOpenUrl(BuildConfig.URL_ACCEPTABLE_USE) },
+                ),
+                start = termsStart,
+                end = termsEnd,
+            )
+        }
+        val privacyStart = fullText.lastIndexOf(privacyLink)
+        if (privacyStart >= 0) {
+            val privacyEnd = privacyStart + privacyLink.length
+            addStyle(linkStyle, privacyStart, privacyEnd)
+            addLink(
+                url = LinkAnnotation.Url(
+                    url = BuildConfig.URL_PRIVACY,
+                    linkInteractionListener = { onOpenUrl(BuildConfig.URL_PRIVACY) },
+                ),
+                start = privacyStart,
+                end = privacyEnd,
+            )
+        }
+    }
+    Text(
+        text = annotated,
+        modifier = modifier,
+        style = ElementTheme.typography.fontBodySmRegular,
+        color = ElementTheme.colors.textSecondary,
+        textAlign = TextAlign.Center,
+    )
 }
 
 @PreviewsDayNight

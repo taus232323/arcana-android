@@ -1,3 +1,4 @@
+import config.BuildTimeConfig
 import extension.buildConfigFieldStr
 import extension.setupDependencyInjection
 import extension.testCommonDependencies
@@ -27,6 +28,17 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    defaultConfig {
+        buildConfigFieldStr(
+            name = "URL_ACCEPTABLE_USE",
+            value = BuildTimeConfig.URL_ACCEPTABLE_USE ?: "https://arcana.celesteai.ru/terms",
+        )
+        buildConfigFieldStr(
+            name = "URL_PRIVACY",
+            value = BuildTimeConfig.URL_PRIVACY ?: "https://arcana.celesteai.ru/privacy",
+        )
     }
 
     buildTypes {
