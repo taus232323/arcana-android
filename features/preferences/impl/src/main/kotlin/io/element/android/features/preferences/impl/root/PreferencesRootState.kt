@@ -34,5 +34,6 @@ data class PreferencesRootState(
     val snackbarMessage: SnackbarMessage?,
     val eventSink: (PreferencesRootEvent) -> Unit,
 ) {
-    val showBlockedUsersItem = nbOfBlockedUsers > 0
+    // Always show, including when empty — matches Arcana iOS SettingsScreen.
+    val showBlockedUsersItem = true
 }

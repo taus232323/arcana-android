@@ -371,7 +371,7 @@ class PreferencesRootViewTest {
     }
 
     @Test
-    fun `when nbOfBlockedUsers is 0, item is not shown`() {
+    fun `when nbOfBlockedUsers is 0, item is still shown`() {
         val eventsRecorder = EventsRecorder<PreferencesRootEvent>(expectEvents = false)
         rule.setView(
             aPreferencesRootState(
@@ -379,7 +379,7 @@ class PreferencesRootViewTest {
                 eventSink = eventsRecorder,
             ),
         )
-        rule.onNodeWithText(rule.activity.getString(CommonStrings.common_blocked_users)).assertDoesNotExist()
+        rule.onNodeWithText(rule.activity.getString(CommonStrings.common_blocked_users)).assertExists()
     }
 
     @Test
